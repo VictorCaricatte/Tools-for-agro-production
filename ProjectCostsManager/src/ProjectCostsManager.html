@@ -1,0 +1,679 @@
+<!-- 
+ ==============================================================================
+ Author:       Victor S Caricatte De Araújo
+ Email:        victorleniwys@gmail.com or victorsc@ufmg.br
+ Intitution:   Universidade federal de Minas Gerais
+ Version:      1.0.0
+ Date:         May,15
+ ...................................
+ ==============================================================================
+-->
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planilha de Custos Aprimorada</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Bibliotecas para exportação PDF e Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Light gray background */
+            color: #1f2937; /* Dark gray text */
+        }
+        .table-container {
+            background-color: #ffffff;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            margin-bottom: 2rem;
+        }
+        .table-category {
+            margin-bottom: 2rem;
+        }
+        .table-category h2 {
+            font-size: 1.5rem; /* Increased font size for category titles */
+            font-weight: 600;
+            color: #374151; /* Medium-dark gray for titles */
+            margin-bottom: 1rem;
+            border-bottom: 2px solid #e5e7eb; /* Separator line */
+            padding-bottom: 0.5rem;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 0.875rem;
+        }
+        th {
+            background-color: #f9fafb; /* Lighter gray for table headers */
+            font-weight: 600;
+            color: #4b5563;
+            cursor: pointer; /* For sorting indication */
+        }
+        th .sort-icon {
+            margin-left: 0.25rem;
+            opacity: 0.5;
+        }
+        th:hover .sort-icon {
+            opacity: 1;
+        }
+        tr:nth-child(even) {
+            background-color: #f9fafb;
+        }
+        input[type="text"],
+        input[type="number"] {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        input[type="text"]:focus,
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #3b82f6; /* Blue focus border */
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+        .total-row td {
+            font-weight: 600;
+            background-color: #f0fdf4; /* Light green for total rows */
+            color: #15803d;
+        }
+        .action-buttons button, .global-actions button {
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+        }
+        .btn-add {
+            background-color: transparent;
+            color: #22c55e; /* Green text */
+            border: none;
+        }
+        .btn-add:hover {
+            color: #16a34a;
+            background-color: transparent;
+        }
+        .btn-remove {
+            background-color: transparent;
+            color: #ef4444; /* Red text */
+            padding: 0.3rem 0.6rem; /* Smaller padding for remove button */
+            border: none;
+        }
+        .btn-remove:hover {
+            color: #dc2626;
+            background-color: transparent;
+        }
+        .btn-export-pdf {
+            background-color: #3b82f6; /* Blue */
+            color: white;
+        }
+        .btn-export-pdf:hover {
+            background-color: #2563eb;
+        }
+        .btn-export-excel {
+            background-color: #10b981; /* Emerald */
+            color: white;
+        }
+        .btn-export-excel:hover {
+            background-color: #059669;
+        }
+        .btn-clear {
+            background-color: #f97316; /* Orange */
+            color: white;
+        }
+        .btn-clear:hover {
+            background-color: #ea580c;
+        }
+        .global-actions {
+            display: flex;
+            justify-content: space-between; /* Align items with space between */
+            align-items: center; /* Vertically align items */
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background-color: #ffffff;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .search-filter-container {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+        .search-filter-container input[type="text"] {
+            min-width: 250px; /* Ensure search input is wide enough */
+        }
+        .totals-summary {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background-color: #e0f2fe; /* Light blue for summary */
+            border: 1px solid #bae6fd;
+            border-radius: 0.5rem;
+            text-align: right;
+        }
+        .totals-summary h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: #0c4a6e; /* Darker blue for summary title */
+        }
+        .totals-summary p {
+            font-size: 1rem;
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+            color: #075985;
+        }
+        .instructions {
+            margin-top: 2rem;
+            padding: 1rem;
+            background-color: #fffbeb; /* Light yellow for instructions */
+            border: 1px solid #fef3c7;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            color: #713f12;
+        }
+        .instructions h4 {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .instructions ul {
+            list-style-type: disc;
+            margin-left: 1.5rem;
+        }
+        /* For sort icons */
+        .sort-icon::after {
+            content: '\2195'; /* Up-down arrow */
+            opacity: 0.5;
+        }
+        .sort-icon.asc::after {
+            content: '\2191'; /* Up arrow */
+            opacity: 1;
+        }
+        .sort-icon.desc::after {
+            content: '\2193'; /* Down arrow */
+            opacity: 1;
+        }
+        /* Hide elements meant only for PDF export from screen */
+        .pdf-only {
+            display: none;
+        }
+        /* Styles for PDF export - to be used by html2pdf.js if needed */
+        @media print {
+            body {
+                font-family: 'Inter', sans-serif; /* Ensure font consistency */
+                -webkit-print-color-adjust: exact; /* Ensures background colors are printed in Chrome/Safari */
+                print-color-adjust: exact; /* Standard property */
+            }
+            .no-print {
+                display: none !important;
+            }
+            .pdf-only {
+                display: block !important;
+            }
+            .table-container, .global-actions, .totals-summary, .instructions {
+                box-shadow: none;
+                border: 1px solid #ccc;
+                margin-bottom: 1rem;
+            }
+            table {
+                font-size: 9pt;
+            }
+            th, td {
+                padding: 4pt 6pt;
+            }
+            input[type="text"], input[type="number"] {
+                 border: none;
+                 padding: 2px;
+                 background-color: transparent; /* Make inputs look like text */
+                 width: auto; /* Adjust width for content */
+                 display: inline; /* Display as inline for PDF */
+            }
+            /* Attempt to show input values in PDF */
+            input[type="text"]::after, input[type="number"]::after {
+                 content: attr(value);
+            }
+        }
+    </style>
+</head>
+<body class="p-6 md:p-10">
+    <header class="mb-8 text-center">
+        <h1 class="text-3xl font-bold text-gray-800">Planilha de Custos e Recursos Aprimorada</h1>
+    </header>
+
+    <div class="global-actions no-print">
+        <div class="search-filter-container">
+            <input type="text" id="globalSearch" placeholder="Buscar em todas as tabelas..." class="border-gray-300 focus:ring-blue-500 focus:border-blue-500">
+            <!-- Filter button could be added here if more complex filtering is needed -->
+        </div>
+        <div>
+            <button id="exportPdfBtn" class="btn-export-pdf">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-pdf-fill" viewBox="0 0 16 16">
+                    <path d="M5.523 12.424c.14-.082.293-.162.459-.238a7.878 7.878 0 0 1-.45.606c-.28.337-.498.516-.635.572a.266.266 0 0 1-.035.012.282.282 0 0 1-.026-.044c-.056-.11-.054-.226.03-.335.078-.097.224-.24.401-.382z"/>
+                    <path fill-rule="evenodd" d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2.5z"/>
+                    <path d="M4.603 14.087a.81.81 0 0 1-.438-.42c-.195-.388-.13-.776.08-1.102.198-.307.526-.568.897-.787a7.68 7.68 0 0 1 1.482-.645 19.697 19.697 0 0 0 1.062-2.227 7.269 7.269 0 0 1-.43-1.295c-.086-.4-.119-.796-.046-1.136.075-.354.274-.672.658-.823.192-.077.4-.12.602-.077a.7.7 0 0 1 .477.365c.088.164.12.356.127.538.007.188-.012.375-.038.563a.84.84 0 0 1-.23.518c-.203.226-.534.446-.92.624a5.48 5.48 0 0 0-1.305.794c-.057.035-.114.07-.17.107a1.06 1.06 0 0 0-.117.238.72.72 0 0 0 .03.285.64.64 0 0 0 .11.19c.097.1.248.193.436.26.19.07.407.11.614.09.142-.014.277-.05.39-.095a.1.1 0 0 1 .11.01.12.12 0 0 1 .01.111.12.12 0 0 1-.029.092c-.042.04-.12.06-.2.07a1.426 1.426 0 0 1-.47.03c-.283-.005-.599-.041-.909-.11a1.99 1.99 0 0 1-.908-.399z"/>
+                </svg>
+                Exportar para PDF
+            </button>
+            <button id="exportExcelBtn" class="btn-export-excel">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-excel-fill" viewBox="0 0 16 16">
+                    <path d="M9.293 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.707A1 1 0 0 0 13.707 4L10 .293A1 1 0 0 0 9.293 0zM9.5 3.5v-2l3 3h-2a1 1 0 0 1-1-1zM5.884 6.68 8 9.219l2.116-2.54a.5.5 0 1 1 .768.641L8.651 10l2.233 2.68a.5.5 0 0 1-.768.64L8 10.781l-2.116 2.54a.5.5 0 0 1-.768-.641L7.349 10 5.116 7.32a.5.5 0 1 1 .768-.64z"/>
+                </svg>
+                Exportar para Excel
+            </button>
+            <button id="clearDataBtn" class="btn-clear">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash3-fill" viewBox="0 0 16 16">
+                    <path d="M11 1.5v1h3.5a.5.5 0 0 1 0 1h-.538l-.853 10.66A2 2 0 0 1 11.115 16h-6.23a2 2 0 0 1-1.994-1.84L2.038 3.5H1.5a.5.5 0 0 1 0-1H5v-1A1.5 1.5 0 0 1 6.5 0h3A1.5 1.5 0 0 1 11 1.5Zm-5 0v1h4v-1a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5ZM4.5 5.029l.5 8.5a.5.5 0 1 0 .998-.06l-.5-8.5a.5.5 0 1 0-.998.06Zm6.53-.528a.5.5 0 0 0-.528.47l-.5 8.5a.5.5 0 0 0 .998.058l.5-8.5a.5.5 0 0 0-.47-.528ZM8 4.5a.5.5 0 0 0-.5.5v8.5a.5.5 0 0 0 1 0V5a.5.5 0 0 0-.5-.5Z"/>
+                </svg>
+                Limpar Dados
+            </button>
+            <!-- Save/Load progress buttons can be added here if LocalStorage is implemented -->
+        </div>
+    </div>
+
+    <main id="planilhaCompleta">
+        <!-- Categories will be dynamically generated or hardcoded here -->
+        <!-- Example for one category -->
+        <div class="table-container" id="category-infraestrutura">
+            <div class="table-category">
+                <h2>Infraestrutura</h2>
+                <div class="overflow-x-auto">
+                    <table data-category-id="infraestrutura">
+                        <thead>
+                            <tr>
+                                <th data-column="item">Item <span class="sort-icon"></span></th>
+                                <th data-column="quantidade">Quantidade <span class="sort-icon"></span></th>
+                                <th data-column="valorUnitario">Valor Unitário (R$) <span class="sort-icon"></span></th>
+                                <th data-column="valorTotal">Valor Total (R$) <span class="sort-icon"></span></th>
+                                <th data-column="depreciacao">Depreciação (R$) <span class="sort-icon"></span></th>
+                                <th class="no-print">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Rows will be added here by JavaScript -->
+                        </tbody>
+                        <tfoot>
+                            <tr class="total-row">
+                                <td colspan="3" class="text-right font-semibold">Total da Categoria:</td>
+                                <td data-total="valorTotal">R$ 0.00</td>
+                                <td data-total="depreciacao">R$ 0.00</td>
+                                <td class="no-print"></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <div class="mt-4 text-right no-print">
+                    <button class="btn-add add-row-btn" data-category-id="infraestrutura">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-circle-fill" viewBox="0 0 16 16">
+                            <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8.5 4.5a.5.5 0 0 0-1 0v3h-3a.5.5 0 0 0 0 1h3v3a.5.5 0 0 0 1 0v-3h3a.5.5 0 0 0 0-1h-3v-3z"/>
+                        </svg>
+                        Adicionar Item
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Other categories will follow the same structure -->
+
+    </main>
+
+    <div class="totals-summary">
+        <h3>Resumo Geral da Planilha</h3>
+        <p>Valor Total Geral: <span id="grandTotalValor">R$ 0.00</span></p>
+        <p>Depreciação Total Geral: <span id="grandTotalDepreciacao">R$ 0.00</span></p>
+    </div>
+
+    <div class="instructions no-print">
+        <h4>Instruções de Uso:</h4>
+        <ul>
+            <li>Clique em "Adicionar Item" para incluir novas linhas em cada categoria.</li>
+            <li>Preencha os campos "Item", "Quantidade", "Valor Unitário" e "Depreciação". O "Valor Total" é calculado automaticamente.</li>
+            <li>Clique nos cabeçalhos das colunas para ordenar os dados.</li>
+            <li>Utilize o campo "Buscar" para filtrar itens em todas as tabelas.</li>
+            <li>Para remover um item, clique no ícone de lixeira (<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="bi bi-trash3-fill inline" viewBox="0 0 16 16"><path d="M11 1.5v1h3.5a.5.5 0 0 1 0 1h-.538l-.853 10.66A2 2 0 0 1 11.115 16h-6.23a2 2 0 0 1-1.994-1.84L2.038 3.5H1.5a.5.5 0 0 1 0-1H5v-1A1.5 1.5 0 0 1 6.5 0h3A1.5 1.5 0 0 1 11 1.5Zm-5 0v1h4v-1a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5ZM4.5 5.029l.5 8.5a.5.5 0 1 0 .998-.06l-.5-8.5a.5.5 0 1 0-.998.06Zm6.53-.528a.5.5 0 0 0-.528.47l-.5 8.5a.5.5 0 0 0 .998.058l.5-8.5a.5.5 0 0 0-.47-.528ZM8 4.5a.5.5 0 0 0-.5.5v8.5a.5.5 0 0 0 1 0V5a.5.5 0 0 0-.5-.5Z"/></svg>) na linha correspondente.</li>
+            <li>Exporte a planilha completa para PDF ou Excel utilizando os botões no topo.</li>
+            <li>"Limpar Dados" removerá todas as informações inseridas (use com cuidado!).</li>
+        </ul>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const categories = [
+            { id: 'infraestrutura', name: 'Infraestrutura', items: [] },
+            { id: 'equipamentos', name: 'Equipamentos e Utensílios', items: [] },
+            { id: 'equipe', name: 'Equipe', items: [] },
+            { id: 'custos', name: 'Custos', items: [] },
+            { id: 'servicos', name: 'Serviços', items: [] },
+            { id: 'insumos', name: 'Insumos e Materiais de Consumo', items: [] }
+        ];
+
+        const mainContainer = document.getElementById('planilhaCompleta');
+        const grandTotalValorEl = document.getElementById('grandTotalValor');
+        const grandTotalDepreciacaoEl = document.getElementById('grandTotalDepreciacao');
+
+        function formatCurrency(value) {
+            return `R$ ${parseFloat(value).toFixed(2).replace('.', ',')}`;
+        }
+
+        function parseCurrency(value) {
+            if (typeof value === 'string') {
+                return parseFloat(value.replace('R$', '').replace(/\./g, '').replace(',', '.')) || 0;
+            }
+            return parseFloat(value) || 0;
+        }
+
+        function createRowId() {
+            return `row-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        }
+
+        function renderRow(categoryId, item = { id: createRowId(), item: '', quantidade: 0, valorUnitario: 0, depreciacao: 0 }) {
+            const tr = document.createElement('tr');
+            tr.setAttribute('data-row-id', item.id);
+            tr.innerHTML = `
+                <td><input type="text" class="item-input w-full p-1 border rounded" value="${item.item}" placeholder="Nome do item"></td>
+                <td><input type="number" class="quantidade-input w-full p-1 border rounded" value="${item.quantidade}" min="0" step="any"></td>
+                <td><input type="number" class="valor-unitario-input w-full p-1 border rounded" value="${item.valorUnitario}" min="0" step="0.01"></td>
+                <td class="valor-total-cell">${formatCurrency(item.quantidade * item.valorUnitario)}</td>
+                <td><input type="number" class="depreciacao-input w-full p-1 border rounded" value="${item.depreciacao}" min="0" step="0.01"></td>
+                <td class="no-print"><button class="btn-remove remove-row-btn" data-category-id="${categoryId}" data-row-id="${item.id}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash3-fill" viewBox="0 0 16 16">
+                        <path d="M11 1.5v1h3.5a.5.5 0 0 1 0 1h-.538l-.853 10.66A2 2 0 0 1 11.115 16h-6.23a2 2 0 0 1-1.994-1.84L2.038 3.5H1.5a.5.5 0 0 1 0-1H5v-1A1.5 1.5 0 0 1 6.5 0h3A1.5 1.5 0 0 1 11 1.5Zm-5 0v1h4v-1a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5ZM4.5 5.029l.5 8.5a.5.5 0 1 0 .998-.06l-.5-8.5a.5.5 0 1 0-.998.06Zm6.53-.528a.5.5 0 0 0-.528.47l-.5 8.5a.5.5 0 0 0 .998.058l.5-8.5a.5.5 0 0 0-.47-.528ZM8 4.5a.5.5 0 0 0-.5.5v8.5a.5.5 0 0 0 1 0V5a.5.5 0 0 0-.5-.5Z"/>
+                    </svg>
+                </button></td>
+            `;
+            tr.querySelectorAll('input').forEach(input => {
+                input.addEventListener('input', () => updateCalculations(categoryId, item.id));
+                input.addEventListener('change', () => updateCalculations(categoryId, item.id));
+            });
+            tr.querySelector('.remove-row-btn').addEventListener('click', () => removeRow(categoryId, item.id));
+            return tr;
+        }
+
+        function renderCategory(category) {
+            const categoryDiv = document.createElement('div');
+            categoryDiv.className = 'table-container';
+            categoryDiv.id = `category-${category.id}`;
+            categoryDiv.innerHTML = `
+                <div class="table-category">
+                    <h2>${category.name}</h2>
+                    <div class="overflow-x-auto">
+                        <table data-category-id="${category.id}" class="w-full">
+                            <thead>
+                                <tr>
+                                    <th data-column="item" class="cursor-pointer">Item <span class="sort-icon"></span></th>
+                                    <th data-column="quantidade" class="cursor-pointer">Quantidade <span class="sort-icon"></span></th>
+                                    <th data-column="valorUnitario" class="cursor-pointer">Valor Unitário (R$) <span class="sort-icon"></span></th>
+                                    <th data-column="valorTotal" class="cursor-pointer">Valor Total (R$) <span class="sort-icon"></span></th>
+                                    <th data-column="depreciacao" class="cursor-pointer">Depreciação (R$) <span class="sort-icon"></span></th>
+                                    <th class="no-print">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                            <tfoot>
+                                <tr class="total-row">
+                                    <td colspan="3" class="text-right font-semibold">Total da Categoria:</td>
+                                    <td data-total="valorTotal">${formatCurrency(0)}</td>
+                                    <td data-total="depreciacao">${formatCurrency(0)}</td>
+                                    <td class="no-print"></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    <div class="mt-4 text-right no-print">
+                        <button class="btn-add add-row-btn" data-category-id="${category.id}">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-circle-fill" viewBox="0 0 16 16">
+                                <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8.5 4.5a.5.5 0 0 0-1 0v3h-3a.5.5 0 0 0 0 1h3v3a.5.5 0 0 0 1 0v-3h3a.5.5 0 0 0 0-1h-3v-3z"/>
+                            </svg>
+                            Adicionar Item
+                        </button>
+                    </div>
+                </div>
+            `;
+            mainContainer.appendChild(categoryDiv);
+            const tbody = categoryDiv.querySelector('tbody');
+            if (category.items.length === 0) {
+                 addRow(category.id, tbody); // Pass tbody to avoid re-querying
+            } else {
+                category.items.forEach(item => tbody.appendChild(renderRow(category.id, item)));
+            }
+
+            categoryDiv.querySelector('.add-row-btn').addEventListener('click', () => addRow(category.id));
+            categoryDiv.querySelectorAll('th[data-column]').forEach(th => {
+                th.addEventListener('click', () => sortTable(category.id, th.dataset.column, th));
+            });
+        }
+
+        function addRow(categoryId, tbodyElement) {
+            const category = categories.find(c => c.id === categoryId);
+            if (!category) return;
+            const newItem = { id: createRowId(), item: '', quantidade: 0, valorUnitario: 0, depreciacao: 0 };
+            category.items.push(newItem);
+            const tbody = tbodyElement || mainContainer.querySelector(`#category-${categoryId} table tbody`);
+            tbody.appendChild(renderRow(categoryId, newItem));
+            updateCalculations(categoryId, newItem.id); 
+        }
+
+        function removeRow(categoryId, rowId) {
+            const category = categories.find(c => c.id === categoryId);
+            if (!category) return;
+            category.items = category.items.filter(item => item.id !== rowId);
+            const rowElement = mainContainer.querySelector(`#category-${categoryId} tr[data-row-id="${rowId}"]`);
+            if (rowElement) rowElement.remove();
+            updateCategoryTotals(categoryId);
+            updateGrandTotals();
+        }
+
+        function updateCalculations(categoryId, rowId) {
+            const category = categories.find(c => c.id === categoryId);
+            if (!category) return;
+            const item = category.items.find(i => i.id === rowId);
+            if (!item) return;
+
+            const rowElement = mainContainer.querySelector(`#category-${categoryId} tr[data-row-id="${rowId}"]`);
+            if (!rowElement) return;
+
+            item.item = rowElement.querySelector('.item-input').value;
+            item.quantidade = parseCurrency(rowElement.querySelector('.quantidade-input').value);
+            item.valorUnitario = parseCurrency(rowElement.querySelector('.valor-unitario-input').value);
+            item.depreciacao = parseCurrency(rowElement.querySelector('.depreciacao-input').value);
+
+            const valorTotal = item.quantidade * item.valorUnitario;
+            rowElement.querySelector('.valor-total-cell').textContent = formatCurrency(valorTotal);
+
+            updateCategoryTotals(categoryId);
+            updateGrandTotals();
+        }
+
+        function updateCategoryTotals(categoryId) {
+            const category = categories.find(c => c.id === categoryId);
+            if (!category) return;
+            let totalValorCategoria = 0;
+            let totalDepreciacaoCategoria = 0;
+            category.items.forEach(item => {
+                totalValorCategoria += item.quantidade * item.valorUnitario;
+                totalDepreciacaoCategoria += item.depreciacao;
+            });
+            const categoryTable = mainContainer.querySelector(`#category-${categoryId} table`);
+            categoryTable.querySelector('tfoot td[data-total="valorTotal"]').textContent = formatCurrency(totalValorCategoria);
+            categoryTable.querySelector('tfoot td[data-total="depreciacao"]').textContent = formatCurrency(totalDepreciacaoCategoria);
+        }
+
+        function updateGrandTotals() {
+            let grandTotalValor = 0;
+            let grandTotalDepreciacao = 0;
+            categories.forEach(category => {
+                category.items.forEach(item => {
+                    grandTotalValor += item.quantidade * item.valorUnitario;
+                    grandTotalDepreciacao += item.depreciacao;
+                });
+            });
+            grandTotalValorEl.textContent = formatCurrency(grandTotalValor);
+            grandTotalDepreciacaoEl.textContent = formatCurrency(grandTotalDepreciacao);
+        }
+
+        function exportToPdf() {
+            const elementToPrint = document.getElementById('planilhaCompleta');
+            const inputs = elementToPrint.querySelectorAll('input[type="text"], input[type="number"]');
+            const tempSpans = [];
+
+            // Replace inputs with their values for printing
+            inputs.forEach(input => {
+                const span = document.createElement('span');
+                span.textContent = input.value;
+                span.style.display = 'inline'; // Ensure it's displayed
+                input.style.display = 'none'; // Hide the input field
+                input.parentNode.insertBefore(span, input.nextSibling);
+                tempSpans.push({input, span});
+            });
+
+            const opt = {
+                margin:       [0.5, 0.2, 0.5, 0.2],
+                filename:     'planilha_custos_aprimorada.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, logging: false, useCORS: true, letterRendering: true, scrollY: 0 },
+                jsPDF:        { unit: 'in', format: 'a4', orientation: 'landscape' }
+            };
+
+            html2pdf().from(elementToPrint).set(opt).save().then(() => {
+                // Restore inputs and remove spans
+                tempSpans.forEach(item => {
+                    item.input.style.display = ''; // Show input again
+                    item.span.remove();
+                });
+            }).catch(err => {
+                console.error("Erro ao exportar para PDF:", err);
+                tempSpans.forEach(item => { // Ensure cleanup on error too
+                    item.input.style.display = '';
+                    item.span.remove();
+                });
+            });
+        }
+        
+        function getTableDataForExcel() {
+            const allData = [];
+            categories.forEach(category => {
+                allData.push([category.name]);
+                allData.push(['Item', 'Quantidade', 'Valor Unitário (R$)', 'Valor Total (R$)', 'Depreciação (R$)']);
+                category.items.forEach(item => {
+                    allData.push([
+                        item.item,
+                        item.quantidade,
+                        item.valorUnitario,
+                        item.quantidade * item.valorUnitario,
+                        item.depreciacao
+                    ]);
+                });
+                let totalValorCategoria = 0, totalDepreciacaoCategoria = 0;
+                category.items.forEach(item => {
+                    totalValorCategoria += item.quantidade * item.valorUnitario;
+                    totalDepreciacaoCategoria += item.depreciacao;
+                });
+                allData.push(['', '', 'Total da Categoria:', totalValorCategoria, totalDepreciacaoCategoria]);
+                allData.push([]); 
+            });
+            let grandTotalValor = 0, grandTotalDepreciacao = 0;
+            categories.forEach(category => {
+                category.items.forEach(item => {
+                    grandTotalValor += item.quantidade * item.valorUnitario;
+                    grandTotalDepreciacao += item.depreciacao;
+                });
+            });
+            allData.push([]);
+            allData.push(['', '', 'Valor Total Geral:', grandTotalValor]);
+            allData.push(['', '', 'Depreciação Total Geral:', grandTotalDepreciacao]);
+            return allData;
+        }
+
+        function exportToExcel() {
+            const data = getTableDataForExcel();
+            const worksheet = XLSX.utils.aoa_to_sheet(data);
+            const colWidths = [{wch:40}, {wch:15}, {wch:20}, {wch:20}, {wch:20}];
+            worksheet['!cols'] = colWidths;
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Planilha de Custos');
+            XLSX.writeFile(workbook, 'planilha_custos_aprimorada.xlsx');
+        }
+
+        function clearAllData() {
+            if (!confirm("Tem certeza que deseja limpar todos os dados da planilha? Esta ação não pode ser desfeita.")) return;
+            categories.forEach(category => {
+                category.items = [];
+                const tbody = mainContainer.querySelector(`#category-${category.id} table tbody`);
+                tbody.innerHTML = '';
+                addRow(category.id, tbody);
+                updateCategoryTotals(category.id);
+            });
+            updateGrandTotals();
+            document.getElementById('globalSearch').value = '';
+            filterGlobalSearch();
+        }
+
+        const sortState = {};
+        function sortTable(categoryId, column, thElement) {
+            const category = categories.find(c => c.id === categoryId);
+            if (!category) return;
+            const currentOrder = (sortState[categoryId] && sortState[categoryId].column === column) ? (sortState[categoryId].order === 'asc' ? 'desc' : 'asc') : 'asc';
+            sortState[categoryId] = { column, order: currentOrder };
+            category.items.sort((a, b) => {
+                let valA, valB;
+                if (column === 'item') { valA = String(a.item).toLowerCase(); valB = String(b.item).toLowerCase(); }
+                else if (column === 'valorTotal') { valA = a.quantidade * a.valorUnitario; valB = b.quantidade * b.valorUnitario; }
+                else { valA = a[column]; valB = b[column]; }
+                if (valA < valB) return currentOrder === 'asc' ? -1 : 1;
+                if (valA > valB) return currentOrder === 'asc' ? 1 : -1;
+                return 0;
+            });
+            const tbody = mainContainer.querySelector(`#category-${categoryId} table tbody`);
+            tbody.innerHTML = '';
+            category.items.forEach(item => tbody.appendChild(renderRow(categoryId, item)));
+            mainContainer.querySelectorAll(`#category-${categoryId} th .sort-icon`).forEach(icon => { icon.className = 'sort-icon'; });
+            thElement.querySelector('.sort-icon').classList.add(currentOrder);
+            filterGlobalSearch();
+        }
+
+        function filterGlobalSearch() {
+            const searchTerm = document.getElementById('globalSearch').value.toLowerCase();
+            categories.forEach(category => {
+                const tbody = mainContainer.querySelector(`#category-${category.id} table tbody`);
+                tbody.querySelectorAll('tr').forEach(row => {
+                    const rowId = row.dataset.rowId;
+                    const itemData = category.items.find(i => i.id === rowId);
+                    if (itemData) {
+                        const itemText = `${itemData.item} ${itemData.quantidade} ${itemData.valorUnitario} ${itemData.quantidade * itemData.valorUnitario} ${itemData.depreciacao}`.toLowerCase();
+                        row.style.display = itemText.includes(searchTerm) ? '' : 'none';
+                    }
+                });
+            });
+        }
+
+        mainContainer.innerHTML = ''; // Clear placeholder
+        categories.forEach(renderCategory);
+        updateGrandTotals();
+
+        document.getElementById('exportPdfBtn').addEventListener('click', exportToPdf);
+        document.getElementById('exportExcelBtn').addEventListener('click', exportToExcel);
+        document.getElementById('clearDataBtn').addEventListener('click', clearAllData);
+        document.getElementById('globalSearch').addEventListener('input', filterGlobalSearch);
+    });
+    </script>
+
+</body>
+</html>
