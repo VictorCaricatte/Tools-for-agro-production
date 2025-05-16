@@ -3,8 +3,8 @@
  Author:       Victor S Caricatte De Araújo
  Email:        victorleniwys@gmail.com or victorsc@ufmg.br
  Intitution:   Universidade federal de Minas Gerais
- Version:      1.0.0
- Date:         May,15
+ Version:      1.2.8
+ Date:         May,16
  ...................................
  ==============================================================================
 -->
@@ -83,6 +83,20 @@
         }
         input[type="text"]:focus,
         input[type="number"]:focus {
+            outline: none;
+            border-color: #3b82f6; /* Blue focus border */
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+        select {
+            width: auto;
+            padding: 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            background-color: white;
+        }
+        select:focus {
             outline: none;
             border-color: #3b82f6; /* Blue focus border */
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
@@ -235,11 +249,13 @@
             }
             table {
                 font-size: 9pt;
+                page-break-inside: avoid;
+                width: 100%;
             }
             th, td {
                 padding: 4pt 6pt;
             }
-            input[type="text"], input[type="number"] {
+            input[type="text"], input[type="number"], select {
                  border: none;
                  padding: 2px;
                  background-color: transparent; /* Make inputs look like text */
@@ -250,6 +266,36 @@
             input[type="text"]::after, input[type="number"]::after {
                  content: attr(value);
             }
+        }
+        /* Notification styles */
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #10b981;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+            z-index: 1000;
+        }
+        .notification.show {
+            opacity: 1;
+        }
+        /* Unidade de medida container */
+        .unidade-container {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .unidade-container input {
+            flex: 1;
+        }
+        .unidade-container select {
+            width: auto;
+            min-width: 70px;
         }
     </style>
 </head>
@@ -284,7 +330,6 @@
                 </svg>
                 Limpar Dados
             </button>
-            <!-- Save/Load progress buttons can be added here if LocalStorage is implemented -->
         </div>
     </div>
 
@@ -312,8 +357,8 @@
                         <tfoot>
                             <tr class="total-row">
                                 <td colspan="3" class="text-right font-semibold">Total da Categoria:</td>
-                                <td data-total="valorTotal">R$ 0.00</td>
-                                <td data-total="depreciacao">R$ 0.00</td>
+                                <td data-total="valorTotal">R$ 0,00</td>
+                                <td data-total="depreciacao">R$ 0,00</td>
                                 <td class="no-print"></td>
                             </tr>
                         </tfoot>
@@ -336,8 +381,8 @@
 
     <div class="totals-summary">
         <h3>Resumo Geral da Planilha</h3>
-        <p>Valor Total Geral: <span id="grandTotalValor">R$ 0.00</span></p>
-        <p>Depreciação Total Geral: <span id="grandTotalDepreciacao">R$ 0.00</span></p>
+        <p>Valor Total Geral: <span id="grandTotalValor">R$ 0,00</span></p>
+        <p>Depreciação Total Geral: <span id="grandTotalDepreciacao">R$ 0,00</span></p>
     </div>
 
     <div class="instructions no-print">
@@ -345,16 +390,24 @@
         <ul>
             <li>Clique em "Adicionar Item" para incluir novas linhas em cada categoria.</li>
             <li>Preencha os campos "Item", "Quantidade", "Valor Unitário" e "Depreciação". O "Valor Total" é calculado automaticamente.</li>
+            <li>Selecione a unidade de medida apropriada para cada item (KG, G, MM, M, etc.).</li>
+            <li>Na aba "Equipe", o campo "Encargos Sociais" é calculado automaticamente com base no salário.</li>
+            <li>Na aba "Serviços", informe o tempo em meses ou anos conforme necessário.</li>
             <li>Clique nos cabeçalhos das colunas para ordenar os dados.</li>
             <li>Utilize o campo "Buscar" para filtrar itens em todas as tabelas.</li>
             <li>Para remover um item, clique no ícone de lixeira (<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="bi bi-trash3-fill inline" viewBox="0 0 16 16"><path d="M11 1.5v1h3.5a.5.5 0 0 1 0 1h-.538l-.853 10.66A2 2 0 0 1 11.115 16h-6.23a2 2 0 0 1-1.994-1.84L2.038 3.5H1.5a.5.5 0 0 1 0-1H5v-1A1.5 1.5 0 0 1 6.5 0h3A1.5 1.5 0 0 1 11 1.5Zm-5 0v1h4v-1a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5ZM4.5 5.029l.5 8.5a.5.5 0 1 0 .998-.06l-.5-8.5a.5.5 0 1 0-.998.06Zm6.53-.528a.5.5 0 0 0-.528.47l-.5 8.5a.5.5 0 0 0 .998.058l.5-8.5a.5.5 0 0 0-.47-.528ZM8 4.5a.5.5 0 0 0-.5.5v8.5a.5.5 0 0 0 1 0V5a.5.5 0 0 0-.5-.5Z"/></svg>) na linha correspondente.</li>
             <li>Exporte a planilha completa para PDF ou Excel utilizando os botões no topo.</li>
             <li>"Limpar Dados" removerá todas as informações inseridas (use com cuidado!).</li>
+            <li>Os dados são salvos automaticamente no navegador. Não serão perdidos ao recarregar a página.</li>
         </ul>
     </div>
 
+    <!-- Notification element -->
+    <div id="notification" class="notification">Dados salvos com sucesso!</div>
+
     <script>
     document.addEventListener('DOMContentLoaded', () => {
+        // Definição das categorias
         const categories = [
             { id: 'infraestrutura', name: 'Infraestrutura', items: [] },
             { id: 'equipamentos', name: 'Equipamentos e Utensílios', items: [] },
@@ -367,46 +420,135 @@
         const mainContainer = document.getElementById('planilhaCompleta');
         const grandTotalValorEl = document.getElementById('grandTotalValor');
         const grandTotalDepreciacaoEl = document.getElementById('grandTotalDepreciacao');
+        const notification = document.getElementById('notification');
 
-        function formatCurrency(value) {
-            return `R$ ${parseFloat(value).toFixed(2).replace('.', ',')}`;
+        // Unidades de medida disponíveis
+        const unidadesMedida = [
+            'un', 'KG', 'g', 'mg', 'L', 'mL', 'm', 'cm', 'mm', 'km', 'm²', 'ha', 'm³', 'T'
+        ];
+
+        // Função para mostrar notificação
+        function showNotification(message) {
+            notification.textContent = message;
+            notification.classList.add('show');
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
         }
 
+        // Função para formatar valores monetários
+        function formatCurrency(value) {
+            return `R$ ${parseFloat(value).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        }
+
+        // Função para converter string de moeda para número
         function parseCurrency(value) {
             if (typeof value === 'string') {
-                return parseFloat(value.replace('R$', '').replace(/\./g, '').replace(',', '.')) || 0;
+                return parseFloat(value.replace(/[^\d,.-]/g, '').replace('.', '').replace(',', '.')) || 0;
             }
             return parseFloat(value) || 0;
         }
 
+        // Função para criar ID único para cada linha
         function createRowId() {
             return `row-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         }
 
-        function renderRow(categoryId, item = { id: createRowId(), item: '', quantidade: 0, valorUnitario: 0, depreciacao: 0 }) {
+        // Função para calcular encargos sociais (aproximadamente 80% do salário)
+        function calcularEncargosSociais(salario) {
+            return salario * 0.8; // 80% do salário como encargos sociais
+        }
+
+        // Função para renderizar uma linha de tabela
+        function renderRow(categoryId, item = { id: createRowId(), item: '', quantidade: 0, valorUnitario: 0, depreciacao: 0, unidade: 'un', encargos: 0, tempo: 0, periodoTempo: 'MÊS' }) {
             const tr = document.createElement('tr');
             tr.setAttribute('data-row-id', item.id);
-            tr.innerHTML = `
-                <td><input type="text" class="item-input w-full p-1 border rounded" value="${item.item}" placeholder="Nome do item"></td>
-                <td><input type="number" class="quantidade-input w-full p-1 border rounded" value="${item.quantidade}" min="0" step="any"></td>
-                <td><input type="number" class="valor-unitario-input w-full p-1 border rounded" value="${item.valorUnitario}" min="0" step="0.01"></td>
-                <td class="valor-total-cell">${formatCurrency(item.quantidade * item.valorUnitario)}</td>
-                <td><input type="number" class="depreciacao-input w-full p-1 border rounded" value="${item.depreciacao}" min="0" step="0.01"></td>
-                <td class="no-print"><button class="btn-remove remove-row-btn" data-category-id="${categoryId}" data-row-id="${item.id}">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash3-fill" viewBox="0 0 16 16">
-                        <path d="M11 1.5v1h3.5a.5.5 0 0 1 0 1h-.538l-.853 10.66A2 2 0 0 1 11.115 16h-6.23a2 2 0 0 1-1.994-1.84L2.038 3.5H1.5a.5.5 0 0 1 0-1H5v-1A1.5 1.5 0 0 1 6.5 0h3A1.5 1.5 0 0 1 11 1.5Zm-5 0v1h4v-1a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5ZM4.5 5.029l.5 8.5a.5.5 0 1 0 .998-.06l-.5-8.5a.5.5 0 1 0-.998.06Zm6.53-.528a.5.5 0 0 0-.528.47l-.5 8.5a.5.5 0 0 0 .998.058l.5-8.5a.5.5 0 0 0-.47-.528ZM8 4.5a.5.5 0 0 0-.5.5v8.5a.5.5 0 0 0 1 0V5a.5.5 0 0 0-.5-.5Z"/>
-                    </svg>
-                </button></td>
-            `;
-            tr.querySelectorAll('input').forEach(input => {
-                input.addEventListener('input', () => updateCalculations(categoryId, item.id));
-                input.addEventListener('change', () => updateCalculations(categoryId, item.id));
+            
+            // Verificar se é a categoria "equipe" para mostrar encargos sociais em vez de depreciação
+            if (categoryId === 'equipe') {
+                tr.innerHTML = `
+                    <td><input type="text" class="item-input w-full p-1 border rounded" value="${item.item}" placeholder="Nome do funcionário"></td>
+                    <td><input type="number" class="quantidade-input w-full p-1 border rounded" value="${item.quantidade}" min="0" step="any" placeholder="Quantidade"></td>
+                    <td><input type="number" class="valor-unitario-input w-full p-1 border rounded" value="${item.valorUnitario}" min="0" step="0.01" placeholder="Salário"></td>
+                    <td class="valor-total-cell">${formatCurrency(item.quantidade * item.valorUnitario)}</td>
+                    <td><input type="number" class="encargos-input w-full p-1 border rounded" value="${item.encargos || calcularEncargosSociais(item.valorUnitario)}" min="0" step="0.01" readonly></td>
+                    <td class="no-print"><button class="btn-remove remove-row-btn" data-category-id="${categoryId}" data-row-id="${item.id}">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash3-fill" viewBox="0 0 16 16">
+                            <path d="M11 1.5v1h3.5a.5.5 0 0 1 0 1h-.538l-.853 10.66A2 2 0 0 1 11.115 16h-6.23a2 2 0 0 1-1.994-1.84L2.038 3.5H1.5a.5.5 0 0 1 0-1H5v-1A1.5 1.5 0 0 1 6.5 0h3A1.5 1.5 0 0 1 11 1.5Zm-5 0v1h4v-1a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5ZM4.5 5.029l.5 8.5a.5.5 0 1 0 .998-.06l-.5-8.5a.5.5 0 1 0-.998.06Zm6.53-.528a.5.5 0 0 0-.528.47l-.5 8.5a.5.5 0 0 0 .998.058l.5-8.5a.5.5 0 0 0-.47-.528ZM8 4.5a.5.5 0 0 0-.5.5v8.5a.5.5 0 0 0 1 0V5a.5.5 0 0 0-.5-.5Z"/>
+                        </svg>
+                    </button></td>
+                `;
+            } 
+            // Verificar se é a categoria "servicos" para mostrar tempo em vez de quantidade
+            else if (categoryId === 'servicos') {
+                tr.innerHTML = `
+                    <td><input type="text" class="item-input w-full p-1 border rounded" value="${item.item}" placeholder="Nome do serviço"></td>
+                    <td class="unidade-container">
+                        <input type="number" class="tempo-input w-full p-1 border rounded" value="${item.tempo || item.quantidade}" min="0" step="any" placeholder="Tempo">
+                        <select class="periodo-tempo-select p-1 border rounded">
+                            <option value="MÊS" ${(item.periodoTempo || 'MÊS') === 'MÊS' ? 'selected' : ''}>MÊS</option>
+                            <option value="ANO" ${(item.periodoTempo || 'MÊS') === 'ANO' ? 'selected' : ''}>ANO</option>
+                        </select>
+                    </td>
+                    <td><input type="number" class="valor-unitario-input w-full p-1 border rounded" value="${item.valorUnitario}" min="0" step="0.01" placeholder="Valor por período"></td>
+                    <td class="valor-total-cell">${formatCurrency((item.tempo || item.quantidade) * item.valorUnitario)}</td>
+                    <td><input type="number" class="depreciacao-input w-full p-1 border rounded" value="${item.depreciacao}" min="0" step="0.01" placeholder="Depreciação"></td>
+                    <td class="no-print"><button class="btn-remove remove-row-btn" data-category-id="${categoryId}" data-row-id="${item.id}">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash3-fill" viewBox="0 0 16 16">
+                            <path d="M11 1.5v1h3.5a.5.5 0 0 1 0 1h-.538l-.853 10.66A2 2 0 0 1 11.115 16h-6.23a2 2 0 0 1-1.994-1.84L2.038 3.5H1.5a.5.5 0 0 1 0-1H5v-1A1.5 1.5 0 0 1 6.5 0h3A1.5 1.5 0 0 1 11 1.5Zm-5 0v1h4v-1a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5ZM4.5 5.029l.5 8.5a.5.5 0 1 0 .998-.06l-.5-8.5a.5.5 0 1 0-.998.06Zm6.53-.528a.5.5 0 0 0-.528.47l-.5 8.5a.5.5 0 0 0 .998.058l.5-8.5a.5.5 0 0 0-.47-.528ZM8 4.5a.5.5 0 0 0-.5.5v8.5a.5.5 0 0 0 1 0V5a.5.5 0 0 0-.5-.5Z"/>
+                        </svg>
+                    </button></td>
+                `;
+            }
+            // Para as demais categorias
+            else {
+                tr.innerHTML = `
+                    <td><input type="text" class="item-input w-full p-1 border rounded" value="${item.item}" placeholder="Nome do item"></td>
+                    <td class="unidade-container">
+                        <input type="number" class="quantidade-input w-full p-1 border rounded" value="${item.quantidade}" min="0" step="any" placeholder="Quantidade">
+                        <select class="unidade-select p-1 border rounded">
+                            ${unidadesMedida.map(un => `<option value="${un}" ${(item.unidade || 'un') === un ? 'selected' : ''}>${un}</option>`).join('')}
+                        </select>
+                    </td>
+                    <td><input type="number" class="valor-unitario-input w-full p-1 border rounded" value="${item.valorUnitario}" min="0" step="0.01" placeholder="Valor unitário"></td>
+                    <td class="valor-total-cell">${formatCurrency(item.quantidade * item.valorUnitario)}</td>
+                    <td><input type="number" class="depreciacao-input w-full p-1 border rounded" value="${item.depreciacao}" min="0" step="0.01" placeholder="Depreciação"></td>
+                    <td class="no-print"><button class="btn-remove remove-row-btn" data-category-id="${categoryId}" data-row-id="${item.id}">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash3-fill" viewBox="0 0 16 16">
+                            <path d="M11 1.5v1h3.5a.5.5 0 0 1 0 1h-.538l-.853 10.66A2 2 0 0 1 11.115 16h-6.23a2 2 0 0 1-1.994-1.84L2.038 3.5H1.5a.5.5 0 0 1 0-1H5v-1A1.5 1.5 0 0 1 6.5 0h3A1.5 1.5 0 0 1 11 1.5Zm-5 0v1h4v-1a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5ZM4.5 5.029l.5 8.5a.5.5 0 1 0 .998-.06l-.5-8.5a.5.5 0 1 0-.998.06Zm6.53-.528a.5.5 0 0 0-.528.47l-.5 8.5a.5.5 0 0 0 .998.058l.5-8.5a.5.5 0 0 0-.47-.528ZM8 4.5a.5.5 0 0 0-.5.5v8.5a.5.5 0 0 0 1 0V5a.5.5 0 0 0-.5-.5Z"/>
+                        </svg>
+                    </button></td>
+                `;
+            }
+
+            // Adicionar event listeners para inputs
+            tr.querySelectorAll('input, select').forEach(input => {
+                input.addEventListener('input', () => {
+                    updateCalculations(categoryId, item.id);
+                    saveToLocalStorage();
+                });
+                input.addEventListener('change', () => {
+                    updateCalculations(categoryId, item.id);
+                    saveToLocalStorage();
+                });
             });
-            tr.querySelector('.remove-row-btn').addEventListener('click', () => removeRow(categoryId, item.id));
+            
+            // Event listener para botão de remover
+            tr.querySelector('.remove-row-btn').addEventListener('click', () => {
+                removeRow(categoryId, item.id);
+                saveToLocalStorage();
+            });
+            
             return tr;
         }
 
+        // Função para renderizar uma categoria
         function renderCategory(category) {
+            // Verificar se é a categoria "equipe" para mostrar encargos sociais em vez de depreciação
+            const depreciacaoLabel = category.id === 'equipe' ? 'Encargos Sociais (R$)' : 'Depreciação (R$)';
+            // Verificar se é a categoria "servicos" para mostrar tempo em vez de quantidade
+            const quantidadeLabel = category.id === 'servicos' ? 'Tempo' : 'Quantidade';
+            
             const categoryDiv = document.createElement('div');
             categoryDiv.className = 'table-container';
             categoryDiv.id = `category-${category.id}`;
@@ -418,10 +560,10 @@
                             <thead>
                                 <tr>
                                     <th data-column="item" class="cursor-pointer">Item <span class="sort-icon"></span></th>
-                                    <th data-column="quantidade" class="cursor-pointer">Quantidade <span class="sort-icon"></span></th>
+                                    <th data-column="quantidade" class="cursor-pointer">${quantidadeLabel} <span class="sort-icon"></span></th>
                                     <th data-column="valorUnitario" class="cursor-pointer">Valor Unitário (R$) <span class="sort-icon"></span></th>
                                     <th data-column="valorTotal" class="cursor-pointer">Valor Total (R$) <span class="sort-icon"></span></th>
-                                    <th data-column="depreciacao" class="cursor-pointer">Depreciação (R$) <span class="sort-icon"></span></th>
+                                    <th data-column="depreciacao" class="cursor-pointer">${depreciacaoLabel} <span class="sort-icon"></span></th>
                                     <th class="no-print">Ações</th>
                                 </tr>
                             </thead>
@@ -455,22 +597,37 @@
                 category.items.forEach(item => tbody.appendChild(renderRow(category.id, item)));
             }
 
-            categoryDiv.querySelector('.add-row-btn').addEventListener('click', () => addRow(category.id));
+            categoryDiv.querySelector('.add-row-btn').addEventListener('click', () => {
+                addRow(category.id);
+                saveToLocalStorage();
+            });
             categoryDiv.querySelectorAll('th[data-column]').forEach(th => {
                 th.addEventListener('click', () => sortTable(category.id, th.dataset.column, th));
             });
         }
 
+        // Função para adicionar uma nova linha
         function addRow(categoryId, tbodyElement) {
             const category = categories.find(c => c.id === categoryId);
             if (!category) return;
-            const newItem = { id: createRowId(), item: '', quantidade: 0, valorUnitario: 0, depreciacao: 0 };
+            
+            // Criar novo item com valores padrão específicos para cada categoria
+            let newItem;
+            if (categoryId === 'equipe') {
+                newItem = { id: createRowId(), item: '', quantidade: 0, valorUnitario: 0, encargos: 0 };
+            } else if (categoryId === 'servicos') {
+                newItem = { id: createRowId(), item: '', tempo: 0, valorUnitario: 0, depreciacao: 0, periodoTempo: 'MÊS' };
+            } else {
+                newItem = { id: createRowId(), item: '', quantidade: 0, valorUnitario: 0, depreciacao: 0, unidade: 'un' };
+            }
+            
             category.items.push(newItem);
             const tbody = tbodyElement || mainContainer.querySelector(`#category-${categoryId} table tbody`);
             tbody.appendChild(renderRow(categoryId, newItem));
             updateCalculations(categoryId, newItem.id); 
         }
 
+        // Função para remover uma linha
         function removeRow(categoryId, rowId) {
             const category = categories.find(c => c.id === categoryId);
             if (!category) return;
@@ -481,6 +638,7 @@
             updateGrandTotals();
         }
 
+        // Função para atualizar cálculos de uma linha
         function updateCalculations(categoryId, rowId) {
             const category = categories.find(c => c.id === categoryId);
             if (!category) return;
@@ -490,11 +648,29 @@
             const rowElement = mainContainer.querySelector(`#category-${categoryId} tr[data-row-id="${rowId}"]`);
             if (!rowElement) return;
 
+            // Atualizar valores do item com base nos inputs
             item.item = rowElement.querySelector('.item-input').value;
-            item.quantidade = parseCurrency(rowElement.querySelector('.quantidade-input').value);
-            item.valorUnitario = parseCurrency(rowElement.querySelector('.valor-unitario-input').value);
-            item.depreciacao = parseCurrency(rowElement.querySelector('.depreciacao-input').value);
+            
+            // Tratamento específico para cada categoria
+            if (categoryId === 'equipe') {
+                item.quantidade = parseCurrency(rowElement.querySelector('.quantidade-input').value);
+                item.valorUnitario = parseCurrency(rowElement.querySelector('.valor-unitario-input').value);
+                item.encargos = calcularEncargosSociais(item.valorUnitario);
+                rowElement.querySelector('.encargos-input').value = item.encargos.toFixed(2);
+            } else if (categoryId === 'servicos') {
+                item.tempo = parseCurrency(rowElement.querySelector('.tempo-input').value);
+                item.quantidade = item.tempo; // Manter compatibilidade
+                item.valorUnitario = parseCurrency(rowElement.querySelector('.valor-unitario-input').value);
+                item.depreciacao = parseCurrency(rowElement.querySelector('.depreciacao-input').value);
+                item.periodoTempo = rowElement.querySelector('.periodo-tempo-select').value;
+            } else {
+                item.quantidade = parseCurrency(rowElement.querySelector('.quantidade-input').value);
+                item.valorUnitario = parseCurrency(rowElement.querySelector('.valor-unitario-input').value);
+                item.depreciacao = parseCurrency(rowElement.querySelector('.depreciacao-input').value);
+                item.unidade = rowElement.querySelector('.unidade-select').value;
+            }
 
+            // Atualizar valor total na célula
             const valorTotal = item.quantidade * item.valorUnitario;
             rowElement.querySelector('.valor-total-cell').textContent = formatCurrency(valorTotal);
 
@@ -502,118 +678,210 @@
             updateGrandTotals();
         }
 
+        // Função para atualizar totais de uma categoria
         function updateCategoryTotals(categoryId) {
             const category = categories.find(c => c.id === categoryId);
             if (!category) return;
             let totalValorCategoria = 0;
             let totalDepreciacaoCategoria = 0;
+            
             category.items.forEach(item => {
                 totalValorCategoria += item.quantidade * item.valorUnitario;
-                totalDepreciacaoCategoria += item.depreciacao;
+                if (categoryId === 'equipe') {
+                    totalDepreciacaoCategoria += item.encargos;
+                } else {
+                    totalDepreciacaoCategoria += item.depreciacao;
+                }
             });
+            
             const categoryTable = mainContainer.querySelector(`#category-${categoryId} table`);
             categoryTable.querySelector('tfoot td[data-total="valorTotal"]').textContent = formatCurrency(totalValorCategoria);
             categoryTable.querySelector('tfoot td[data-total="depreciacao"]').textContent = formatCurrency(totalDepreciacaoCategoria);
         }
 
+        // Função para atualizar totais gerais
         function updateGrandTotals() {
             let grandTotalValor = 0;
             let grandTotalDepreciacao = 0;
+            
             categories.forEach(category => {
                 category.items.forEach(item => {
                     grandTotalValor += item.quantidade * item.valorUnitario;
-                    grandTotalDepreciacao += item.depreciacao;
+                    if (category.id === 'equipe') {
+                        grandTotalDepreciacao += item.encargos;
+                    } else {
+                        grandTotalDepreciacao += item.depreciacao;
+                    }
                 });
             });
+            
             grandTotalValorEl.textContent = formatCurrency(grandTotalValor);
             grandTotalDepreciacaoEl.textContent = formatCurrency(grandTotalDepreciacao);
         }
 
+        // Função para exportar para PDF
         function exportToPdf() {
             const elementToPrint = document.getElementById('planilhaCompleta');
+            
+            // Preparar elementos para impressão
             const inputs = elementToPrint.querySelectorAll('input[type="text"], input[type="number"]');
+            const selects = elementToPrint.querySelectorAll('select');
             const tempSpans = [];
 
-            // Replace inputs with their values for printing
+            // Substituir inputs por seus valores para impressão
             inputs.forEach(input => {
                 const span = document.createElement('span');
                 span.textContent = input.value;
-                span.style.display = 'inline'; // Ensure it's displayed
-                input.style.display = 'none'; // Hide the input field
+                span.style.display = 'inline'; // Garantir que seja exibido
+                input.style.display = 'none'; // Ocultar o campo de entrada
                 input.parentNode.insertBefore(span, input.nextSibling);
-                tempSpans.push({input, span});
+                tempSpans.push({element: input, span});
+            });
+            
+            // Substituir selects por seus valores para impressão
+            selects.forEach(select => {
+                const span = document.createElement('span');
+                span.textContent = select.options[select.selectedIndex].text;
+                span.style.display = 'inline';
+                select.style.display = 'none';
+                select.parentNode.insertBefore(span, select.nextSibling);
+                tempSpans.push({element: select, span});
             });
 
             const opt = {
-                margin:       [0.5, 0.2, 0.5, 0.2],
-                filename:     'planilha_estrutura_e_valores.pdf',
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, logging: false, useCORS: true, letterRendering: true, scrollY: 0 },
-                jsPDF:        { unit: 'in', format: 'a4', orientation: 'landscape' }
+                margin: [0.5, 0.2, 0.5, 0.2],
+                filename: 'planilha_estrutura_e_valores.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { 
+                    scale: 2, 
+                    logging: false, 
+                    useCORS: true, 
+                    letterRendering: true,
+                    scrollY: 0,
+                    width: elementToPrint.offsetWidth * 1.5, // Aumentar a largura para evitar cortes
+                    height: elementToPrint.offsetHeight * 1.5 // Aumentar a altura para evitar cortes
+                },
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
             };
 
             html2pdf().from(elementToPrint).set(opt).save().then(() => {
-                // Restore inputs and remove spans
+                // Restaurar inputs e remover spans
                 tempSpans.forEach(item => {
-                    item.input.style.display = ''; // Show input again
+                    item.element.style.display = ''; // Mostrar input novamente
                     item.span.remove();
                 });
             }).catch(err => {
                 console.error("Erro ao exportar para PDF:", err);
-                tempSpans.forEach(item => { // Ensure cleanup on error too
-                    item.input.style.display = '';
+                tempSpans.forEach(item => { // Garantir limpeza em caso de erro
+                    item.element.style.display = '';
                     item.span.remove();
                 });
             });
         }
         
+        // Função para obter dados da tabela para Excel
         function getTableDataForExcel() {
             const allData = [];
             categories.forEach(category => {
                 allData.push([category.name]);
-                allData.push(['Item', 'Quantidade', 'Valor Unitário (R$)', 'Valor Total (R$)', 'Depreciação (R$)']);
+                
+                // Cabeçalhos específicos para cada categoria
+                if (category.id === 'equipe') {
+                    allData.push(['Item', 'Quantidade', 'Valor Unitário (R$)', 'Valor Total (R$)', 'Encargos Sociais (R$)']);
+                } else if (category.id === 'servicos') {
+                    allData.push(['Item', 'Tempo', 'Período', 'Valor Unitário (R$)', 'Valor Total (R$)', 'Depreciação (R$)']);
+                } else {
+                    allData.push(['Item', 'Quantidade', 'Unidade', 'Valor Unitário (R$)', 'Valor Total (R$)', 'Depreciação (R$)']);
+                }
+                
+                // Dados de cada item
                 category.items.forEach(item => {
-                    allData.push([
-                        item.item,
-                        item.quantidade,
-                        item.valorUnitario,
-                        item.quantidade * item.valorUnitario,
-                        item.depreciacao
-                    ]);
+                    if (category.id === 'equipe') {
+                        allData.push([
+                            item.item,
+                            item.quantidade,
+                            item.valorUnitario,
+                            item.quantidade * item.valorUnitario,
+                            item.encargos
+                        ]);
+                    } else if (category.id === 'servicos') {
+                        allData.push([
+                            item.item,
+                            item.tempo || item.quantidade,
+                            item.periodoTempo || 'MÊS',
+                            item.valorUnitario,
+                            (item.tempo || item.quantidade) * item.valorUnitario,
+                            item.depreciacao
+                        ]);
+                    } else {
+                        allData.push([
+                            item.item,
+                            item.quantidade,
+                            item.unidade || 'un',
+                            item.valorUnitario,
+                            item.quantidade * item.valorUnitario,
+                            item.depreciacao
+                        ]);
+                    }
                 });
+                
+                // Totais da categoria
                 let totalValorCategoria = 0, totalDepreciacaoCategoria = 0;
                 category.items.forEach(item => {
                     totalValorCategoria += item.quantidade * item.valorUnitario;
-                    totalDepreciacaoCategoria += item.depreciacao;
+                    if (category.id === 'equipe') {
+                        totalDepreciacaoCategoria += item.encargos;
+                    } else {
+                        totalDepreciacaoCategoria += item.depreciacao;
+                    }
                 });
-                allData.push(['', '', 'Total da Categoria:', totalValorCategoria, totalDepreciacaoCategoria]);
+                
+                if (category.id === 'equipe') {
+                    allData.push(['', '', 'Total da Categoria:', totalValorCategoria, totalDepreciacaoCategoria]);
+                } else if (category.id === 'servicos') {
+                    allData.push(['', '', '', 'Total da Categoria:', totalValorCategoria, totalDepreciacaoCategoria]);
+                } else {
+                    allData.push(['', '', '', 'Total da Categoria:', totalValorCategoria, totalDepreciacaoCategoria]);
+                }
+                
                 allData.push([]); 
             });
+            
+            // Totais gerais
             let grandTotalValor = 0, grandTotalDepreciacao = 0;
             categories.forEach(category => {
                 category.items.forEach(item => {
                     grandTotalValor += item.quantidade * item.valorUnitario;
-                    grandTotalDepreciacao += item.depreciacao;
+                    if (category.id === 'equipe') {
+                        grandTotalDepreciacao += item.encargos;
+                    } else {
+                        grandTotalDepreciacao += item.depreciacao;
+                    }
                 });
             });
+            
             allData.push([]);
             allData.push(['', '', 'Valor Total Geral:', grandTotalValor]);
-            allData.push(['', '', 'Depreciação Total Geral:', grandTotalDepreciacao]);
+            allData.push(['', '', 'Depreciação/Encargos Total Geral:', grandTotalDepreciacao]);
+            
             return allData;
         }
 
+        // Função para exportar para Excel
         function exportToExcel() {
             const data = getTableDataForExcel();
             const worksheet = XLSX.utils.aoa_to_sheet(data);
-            const colWidths = [{wch:40}, {wch:15}, {wch:20}, {wch:20}, {wch:20}];
+            const colWidths = [{wch:40}, {wch:15}, {wch:15}, {wch:20}, {wch:20}, {wch:20}];
             worksheet['!cols'] = colWidths;
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, 'Planilha de Custos');
             XLSX.writeFile(workbook, 'planilha_estrutura_e_valores.xlsx');
         }
 
+        // Função para limpar todos os dados
         function clearAllData() {
             if (!confirm("Tem certeza que deseja limpar todos os dados da planilha? Esta ação não pode ser desfeita.")) return;
+            
             categories.forEach(category => {
                 category.items = [];
                 const tbody = mainContainer.querySelector(`#category-${category.id} table tbody`);
@@ -621,57 +889,147 @@
                 addRow(category.id, tbody);
                 updateCategoryTotals(category.id);
             });
+            
             updateGrandTotals();
             document.getElementById('globalSearch').value = '';
             filterGlobalSearch();
+            
+            // Limpar localStorage
+            localStorage.removeItem('planilhaCustos');
+            showNotification('Todos os dados foram limpos');
         }
 
+        // Estado de ordenação
         const sortState = {};
+        
+        // Função para ordenar tabela
         function sortTable(categoryId, column, thElement) {
             const category = categories.find(c => c.id === categoryId);
             if (!category) return;
-            const currentOrder = (sortState[categoryId] && sortState[categoryId].column === column) ? (sortState[categoryId].order === 'asc' ? 'desc' : 'asc') : 'asc';
+            
+            const currentOrder = (sortState[categoryId] && sortState[categoryId].column === column) ? 
+                (sortState[categoryId].order === 'asc' ? 'desc' : 'asc') : 'asc';
+            
             sortState[categoryId] = { column, order: currentOrder };
+            
             category.items.sort((a, b) => {
                 let valA, valB;
-                if (column === 'item') { valA = String(a.item).toLowerCase(); valB = String(b.item).toLowerCase(); }
-                else if (column === 'valorTotal') { valA = a.quantidade * a.valorUnitario; valB = b.quantidade * b.valorUnitario; }
-                else { valA = a[column]; valB = b[column]; }
+                
+                if (column === 'item') { 
+                    valA = String(a.item).toLowerCase(); 
+                    valB = String(b.item).toLowerCase(); 
+                }
+                else if (column === 'valorTotal') { 
+                    valA = a.quantidade * a.valorUnitario; 
+                    valB = b.quantidade * b.valorUnitario; 
+                }
+                else { 
+                    valA = a[column]; 
+                    valB = b[column]; 
+                }
+                
                 if (valA < valB) return currentOrder === 'asc' ? -1 : 1;
                 if (valA > valB) return currentOrder === 'asc' ? 1 : -1;
                 return 0;
             });
+            
             const tbody = mainContainer.querySelector(`#category-${categoryId} table tbody`);
             tbody.innerHTML = '';
             category.items.forEach(item => tbody.appendChild(renderRow(categoryId, item)));
-            mainContainer.querySelectorAll(`#category-${categoryId} th .sort-icon`).forEach(icon => { icon.className = 'sort-icon'; });
+            
+            mainContainer.querySelectorAll(`#category-${categoryId} th .sort-icon`).forEach(icon => { 
+                icon.className = 'sort-icon'; 
+            });
+            
             thElement.querySelector('.sort-icon').classList.add(currentOrder);
             filterGlobalSearch();
+            saveToLocalStorage();
         }
 
+        // Função para filtrar busca global
         function filterGlobalSearch() {
             const searchTerm = document.getElementById('globalSearch').value.toLowerCase();
+            
             categories.forEach(category => {
                 const tbody = mainContainer.querySelector(`#category-${category.id} table tbody`);
+                
                 tbody.querySelectorAll('tr').forEach(row => {
                     const rowId = row.dataset.rowId;
                     const itemData = category.items.find(i => i.id === rowId);
+                    
                     if (itemData) {
-                        const itemText = `${itemData.item} ${itemData.quantidade} ${itemData.valorUnitario} ${itemData.quantidade * itemData.valorUnitario} ${itemData.depreciacao}`.toLowerCase();
+                        let itemText = `${itemData.item} ${itemData.quantidade} ${itemData.valorUnitario} ${itemData.quantidade * itemData.valorUnitario}`;
+                        
+                        if (category.id === 'equipe') {
+                            itemText += ` ${itemData.encargos}`;
+                        } else if (category.id === 'servicos') {
+                            itemText += ` ${itemData.tempo || itemData.quantidade} ${itemData.periodoTempo || 'MÊS'} ${itemData.depreciacao}`;
+                        } else {
+                            itemText += ` ${itemData.unidade || 'un'} ${itemData.depreciacao}`;
+                        }
+                        
+                        itemText = itemText.toLowerCase();
                         row.style.display = itemText.includes(searchTerm) ? '' : 'none';
                     }
                 });
             });
         }
 
-        mainContainer.innerHTML = ''; // Clear placeholder
+        // Funções para persistência de dados com localStorage
+        function saveToLocalStorage() {
+            try {
+                localStorage.setItem('planilhaCustos', JSON.stringify(categories));
+                // Não mostrar notificação a cada salvamento para não incomodar o usuário
+            } catch (error) {
+                console.error('Erro ao salvar dados no localStorage:', error);
+            }
+        }
+
+        function loadFromLocalStorage() {
+            try {
+                const savedData = localStorage.getItem('planilhaCustos');
+                if (savedData) {
+                    const parsedData = JSON.parse(savedData);
+                    
+                    // Atualizar categorias com dados salvos
+                    parsedData.forEach((savedCategory, index) => {
+                        if (index < categories.length) {
+                            categories[index].items = savedCategory.items || [];
+                        }
+                    });
+                    
+                    showNotification('Dados carregados com sucesso');
+                    return true;
+                }
+            } catch (error) {
+                console.error('Erro ao carregar dados do localStorage:', error);
+            }
+            return false;
+        }
+
+        // Inicialização da aplicação
+        mainContainer.innerHTML = ''; // Limpar placeholder
+        
+        // Tentar carregar dados do localStorage
+        const dataLoaded = loadFromLocalStorage();
+        
+        // Renderizar categorias
         categories.forEach(renderCategory);
+        
+        // Atualizar totais gerais
         updateGrandTotals();
 
+        // Event listeners
         document.getElementById('exportPdfBtn').addEventListener('click', exportToPdf);
         document.getElementById('exportExcelBtn').addEventListener('click', exportToExcel);
         document.getElementById('clearDataBtn').addEventListener('click', clearAllData);
         document.getElementById('globalSearch').addEventListener('input', filterGlobalSearch);
+
+        // Salvar dados automaticamente a cada 30 segundos
+        setInterval(saveToLocalStorage, 30000);
+        
+        // Salvar dados antes de fechar a página
+        window.addEventListener('beforeunload', saveToLocalStorage);
     });
     </script>
 
