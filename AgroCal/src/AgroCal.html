@@ -1,0 +1,2585 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgroCal - Calculadora de Viabilidade Econômica</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #28a745;
+            --secondary-color: #6c757d;
+            --background-light: #5e82a7;
+            --text-light: #212529;
+            --background-dark: #343a40;
+            --text-dark: #f8f9fa;
+        }
+
+        body {
+            transition: all 0.3s ease;
+            background-color: var(--background-light);
+            color: var(--text-light);
+        }
+
+        .dark-mode {
+            background-color: var(--background-dark);
+            color: var(--text-dark);
+        }
+
+        .dark-mode .card, 
+        .dark-mode .modal-content,
+        .dark-mode .list-group-item,
+        .dark-mode .table,
+        .dark-mode .dropdown-menu {
+            background-color: #495057;
+            color: var(--text-dark);
+            border-color: #6c757d;
+        }
+
+        .dark-mode .form-control, 
+        .dark-mode .form-select,
+        .dark-mode .input-group-text {
+            background-color: #6c757d;
+            color: var(--text-dark);
+            border-color: #495057;
+        }
+
+        .dark-mode .table {
+            color: var(--text-dark);
+        }
+
+        .dark-mode .nav-tabs .nav-link.active {
+            background-color: #495057;
+            border-color: #6c757d #6c757d #495057;
+        }
+
+        .dark-mode .dropdown-divider {
+            border-color: #6c757d;
+        }
+
+        .dark-mode .text-muted {
+            color: #adb5bd !important;
+        }
+
+        .nav-tabs .nav-link.active {
+            font-weight: bold;
+            border-bottom: 3px solid var(--primary-color);
+        }
+
+        .result-card {
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .positive {
+            color: #28a745;
+        }
+
+        .negative {
+            color: #dc3545;
+        }
+
+        .sensitivity-cell {
+            transition: background-color 0.3s;
+        }
+
+        .sensitivity-cell:hover {
+            background-color: rgba(40, 167, 69, 0.2);
+        }
+
+        #chart-container {
+            height: 400px;
+        }
+
+        .progress {
+            height: 25px;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="container-fluid py-4">
+        <div class="row mb-4">
+            <div class="col-12 d-flex justify-content-between align-items-center">
+                <h1 class="display-5 fw-bold text-primary">
+                    <i class="bi bi-calculator-fill"></i> AgroCal
+                </h1>
+                <div>
+                    <button id="theme-toggle" class="btn btn-outline-secondary me-2">
+                        <i class="bi bi-moon-fill"></i> Tema Escuro
+                    </button>
+                    <div class="btn-group">
+                        <button class="btn btn-outline-primary dropdown-toggle" type="button" id="data-management" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-database"></i> Dados
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="data-management">
+                            <li><button class="dropdown-item" id="save-data"><i class="bi bi-save"></i> Salvar Dados</button></li>
+                            <li><button class="dropdown-item" id="load-data"><i class="bi bi-folder"></i> Carregar Dados</button></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><button class="dropdown-item text-danger" id="clear-data"><i class="bi bi-trash"></i> Limpar Dados</button></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <p class="lead">Calculadora de Viabilidade Econômica para Agronegócios (Beta)</p>
+        </div>
+
+        <div class="row">
+            <div class="col-md-3">
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="bi bi-menu-button"></i> Menu</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="list-group">
+                            <a href="#" class="list-group-item list-group-item-action active" data-bs-toggle="tab" data-bs-target="#basic-info">
+                                <i class="bi bi-info-circle"></i> Informações Básicas
+                            </a>
+                            <a href="#" class="list-group-item list-group-item-action" data-bs-toggle="tab" data-bs-target="#fixed-costs">
+                                <i class="bi bi-house-gear"></i> Custos Fixos
+                            </a>
+                            <a href="#" class="list-group-item list-group-item-action" data-bs-toggle="tab" data-bs-target="#variable-costs">
+                                <i class="bi bi-graph-up-arrow"></i> Custos Variáveis
+                            </a>
+                            <a href="#" class="list-group-item list-group-item-action" data-bs-toggle="tab" data-bs-target="#revenue">
+                                <i class="bi bi-cash-stack"></i> Receitas
+                            </a>
+                            <a href="#" class="list-group-item list-group-item-action" data-bs-toggle="tab" data-bs-target="#financial">
+                                <i class="bi bi-graph-up"></i> Indicadores Financeiros
+                            </a>
+                            <a href="#" class="list-group-item list-group-item-action" data-bs-toggle="tab" data-bs-target="#sensitivity">
+                                <i class="bi bi-speedometer2"></i> Análise de Sensibilidade
+                            </a>
+                            <a href="#" class="list-group-item list-group-item-action" data-bs-toggle="tab" data-bs-target="#marketing">
+                                <i class="bi bi-megaphone"></i> Plano de Marketing
+                            </a>
+                            <a href="#" class="list-group-item list-group-item-action" data-bs-toggle="tab" data-bs-target="#reports">
+                                <i class="bi bi-file-earmark-text"></i> Relatórios
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="bi bi-download"></i> Exportar</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="dropdown mb-2">
+                            <button class="btn btn-danger w-100 dropdown-toggle" type="button" id="export-pdf-dropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-file-earmark-pdf"></i> PDF
+                            </button>
+                            <ul class="dropdown-menu w-100" aria-labelledby="export-pdf-dropdown">
+                                <li><button class="dropdown-item" id="export-pdf-summary">Resumo</button></li>
+                                <li><button class="dropdown-item" id="export-pdf-full">Relatório Completo</button></li>
+                                <li><button class="dropdown-item" id="export-pdf-cashflow">Fluxo de Caixa</button></li>
+                            </ul>
+                        </div>
+                        
+                        <div class="dropdown mb-2">
+                            <button class="btn btn-success w-100 dropdown-toggle" type="button" id="export-excel-dropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-file-earmark-excel"></i> Excel
+                            </button>
+                            <ul class="dropdown-menu w-100" aria-labelledby="export-excel-dropdown">
+                                <li><button class="dropdown-item" id="export-excel-summary">Resumo</button></li>
+                                <li><button class="dropdown-item" id="export-excel-full">Dados Completos</button></li>
+                                <li><button class="dropdown-item" id="export-excel-cashflow">Fluxo de Caixa</button></li>
+                            </ul>
+                        </div>
+                        
+                        <div class="dropdown">
+                            <button class="btn btn-info w-100 dropdown-toggle" type="button" id="export-other-dropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-file-earmark-text"></i> Outros Formatos
+                            </button>
+                            <ul class="dropdown-menu w-100" aria-labelledby="export-other-dropdown">
+                                <li><button class="dropdown-item" id="export-csv"><i class="bi bi-filetype-csv"></i> CSV</button></li>
+                                <li><button class="dropdown-item" id="export-json"><i class="bi bi-filetype-json"></i> JSON</button></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-9">
+                <div class="tab-content">
+                    <!-- Informações Básicas -->
+                    <div class="tab-pane fade show active" id="basic-info">
+                        <div class="card mb-4">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0"><i class="bi bi-info-circle"></i> Informações Básicas do Projeto</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="project-name" class="form-label">Nome do Projeto</label>
+                                        <input type="text" class="form-control" id="project-name" placeholder="Meu Projeto Agro">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="business-type" class="form-label">Tipo de Negócio</label>
+                                        <select class="form-select" id="business-type">
+                                            <option value="aquicultura">Aquicultura</option>
+                                            <option value="gado">Pecuária (Gado)</option>
+                                            <option value="agricultura">Agricultura</option>
+                                            <option value="producao">Produção Industrial</option>
+                                            <option value="outros">Outros</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label for="project-duration" class="form-label">Duração do Projeto (anos)</label>
+                                        <input type="number" class="form-control" id="project-duration" value="5" min="1" max="30">
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="initial-investment" class="form-label">Investimento Inicial (R$)</label>
+                                        <input type="number" class="form-control" id="initial-investment" value="100000" min="0">
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="tma" class="form-label">TMA (Taxa Mínima de Atratividade - %)</label>
+                                        <input type="number" class="form-control" id="tma" value="10" step="0.1" min="0">
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="selic" class="form-label">Taxa SELIC (% ao ano)</label>
+                                        <input type="number" class="form-control" id="selic" value="6.5" step="0.1" min="0">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="inflation" class="form-label">Inflação Esperada (% ao ano)</label>
+                                        <input type="number" class="form-control" id="inflation" value="3.5" step="0.1" min="0">
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-12">
+                                        <label for="project-description" class="form-label">Descrição do Projeto</label>
+                                        <textarea class="form-control" id="project-description" rows="3" placeholder="Descreva seu projeto..."></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card mb-4">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0"><i class="bi bi-lightning-charge"></i> Resumo de Viabilidade</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row" id="viability-summary">
+                                    <div class="col-md-4 mb-3">
+                                        <div class="card result-card">
+                                            <div class="card-body text-center">
+                                                <h6 class="card-subtitle mb-2 text-muted">VPL (Valor Presente Líquido)</h6>
+                                                <h3 class="card-title" id="vpl-result">R$ 0,00</h3>
+                                                <span class="badge bg-secondary">Não calculado</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <div class="card result-card">
+                                            <div class="card-body text-center">
+                                                <h6 class="card-subtitle mb-2 text-muted">TIR (Taxa Interna de Retorno)</h6>
+                                                <h3 class="card-title" id="tir-result">0%</h3>
+                                                <span class="badge bg-secondary">Não calculado</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <div class="card result-card">
+                                            <div class="card-body text-center">
+                                                <h6 class="card-subtitle mb-2 text-muted">Payback</h6>
+                                                <h3 class="card-title" id="payback-result">0 anos</h3>
+                                                <span class="badge bg-secondary">Não calculado</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-center mt-3">
+                                    <button id="calculate-all" class="btn btn-primary btn-lg">
+                                        <i class="bi bi-calculator"></i> Calcular Tudo
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Custos Fixos -->
+                    <div class="tab-pane fade" id="fixed-costs">
+                        <div class="card mb-4">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0"><i class="bi bi-house-gear"></i> Custos Fixos (CAPEX e OPEX)</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label for="fixed-cost-name" class="form-label">Nome do Custo</label>
+                                        <input type="text" class="form-control" id="fixed-cost-name" placeholder="Ex: Aluguel">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="fixed-cost-value" class="form-label">Valor Mensal (R$)</label>
+                                        <input type="number" class="form-control" id="fixed-cost-value" placeholder="1000">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="fixed-cost-type" class="form-label">Tipo de Custo</label>
+                                        <select class="form-select" id="fixed-cost-type">
+                                            <option value="capex">CAPEX (Investimento)</option>
+                                            <option value="opex">OPEX (Operacional)</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2 d-flex align-items-end">
+                                        <button id="add-fixed-cost" class="btn btn-primary w-100">
+                                            <i class="bi bi-plus"></i> Adicionar
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-striped table-hover" id="fixed-costs-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Nome</th>
+                                                <th>Valor Mensal</th>
+                                                <th>Valor Anual</th>
+                                                <th>Tipo</th>
+                                                <th>Ações</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <!-- Linhas serão adicionadas dinamicamente -->
+                                        </tbody>
+                                        <tfoot>
+                                            <tr class="table-active">
+                                                <th>Total</th>
+                                                <th id="total-fixed-monthly">R$ 0,00</th>
+                                                <th id="total-fixed-yearly">R$ 0,00</th>
+                                                <th colspan="2"></th>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Custos Variáveis -->
+                    <div class="tab-pane fade" id="variable-costs">
+                        <div class="card mb-4">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0"><i class="bi bi-graph-up-arrow"></i> Custos Variáveis</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label for="variable-cost-name" class="form-label">Nome do Custo</label>
+                                        <input type="text" class="form-control" id="variable-cost-name" placeholder="Ex: Ração">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="variable-cost-unit" class="form-label">Valor Unitário (R$)</label>
+                                        <input type="number" class="form-control" id="variable-cost-unit" placeholder="10">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="variable-cost-quantity" class="form-label">Quantidade Mensal</label>
+                                        <input type="number" class="form-control" id="variable-cost-quantity" placeholder="100">
+                                    </div>
+                                    <div class="col-md-2 d-flex align-items-end">
+                                        <button id="add-variable-cost" class="btn btn-primary w-100">
+                                            <i class="bi bi-plus"></i> Adicionar
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-striped table-hover" id="variable-costs-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Nome</th>
+                                                <th>Valor Unitário</th>
+                                                <th>Quantidade</th>
+                                                <th>Valor Mensal</th>
+                                                <th>Valor Anual</th>
+                                                <th>Ações</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <!-- Linhas serão adicionadas dinamicamente -->
+                                        </tbody>
+                                        <tfoot>
+                                            <tr class="table-active">
+                                                <th>Total</th>
+                                                <th></th>
+                                                <th id="total-variable-quantity">0</th>
+                                                <th id="total-variable-monthly">R$ 0,00</th>
+                                                <th id="total-variable-yearly">R$ 0,00</th>
+                                                <th></th>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Receitas -->
+                    <div class="tab-pane fade" id="revenue">
+                        <div class="card mb-4">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0"><i class="bi bi-cash-stack"></i> Receitas</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-3">
+                                        <label for="revenue-name" class="form-label">Nome da Receita</label>
+                                        <input type="text" class="form-control" id="revenue-name" placeholder="Ex: Venda de Peixe">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label for="revenue-unit" class="form-label">Preço Unitário (R$)</label>
+                                        <input type="number" class="form-control" id="revenue-unit" placeholder="20">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label for="revenue-quantity" class="form-label">Quantidade Mensal</label>
+                                        <input type="number" class="form-control" id="revenue-quantity" placeholder="50">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label for="revenue-growth" class="form-label">Crescimento Anual (%)</label>
+                                        <input type="number" class="form-control" id="revenue-growth" placeholder="5" value="5">
+                                    </div>
+                                    <div class="col-md-3 d-flex align-items-end">
+                                        <button id="add-revenue" class="btn btn-primary w-100">
+                                            <i class="bi bi-plus"></i> Adicionar
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-striped table-hover" id="revenue-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Nome</th>
+                                                <th>Preço Unitário</th>
+                                                <th>Quantidade</th>
+                                                <th>Receita Mensal</th>
+                                                <th>Receita Anual</th>
+                                                <th>Crescimento</th>
+                                                <th>Ações</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <!-- Linhas serão adicionadas dinamicamente -->
+                                        </tbody>
+                                        <tfoot>
+                                            <tr class="table-active">
+                                                <th>Total</th>
+                                                <th></th>
+                                                <th id="total-revenue-quantity">0</th>
+                                                <th id="total-revenue-monthly">R$ 0,00</th>
+                                                <th id="total-revenue-yearly">R$ 0,00</th>
+                                                <th></th>
+                                                <th></th>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card mb-4">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0"><i class="bi bi-percent"></i> Impostos e Taxas</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label for="icms" class="form-label">ICMS (%)</label>
+                                        <input type="number" class="form-control" id="icms" value="12" step="0.1" min="0" max="100">
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="pis" class="form-label">PIS (%)</label>
+                                        <input type="number" class="form-control" id="pis" value="1.65" step="0.01" min="0" max="100">
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="cofins" class="form-label">COFINS (%)</label>
+                                        <input type="number" class="form-control" id="cofins" value="7.6" step="0.1" min="0" max="100">
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="ir" class="form-label">Imposto de Renda (%)</label>
+                                        <input type="number" class="form-control" id="ir" value="15" step="0.1" min="0" max="100">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="csll" class="form-label">CSLL (%)</label>
+                                        <input type="number" class="form-control" id="csll" value="9" step="0.1" min="0" max="100">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Indicadores Financeiros -->
+                    <div class="tab-pane fade" id="financial">
+                        <div class="card mb-4">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0"><i class="bi bi-graph-up"></i> Indicadores Financeiros</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-4">
+                                    <div class="col-md-6">
+                                        <div id="chart-container">
+                                            <canvas id="financial-chart"></canvas>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered">
+                                                <thead class="table-primary">
+                                                    <tr>
+                                                        <th>Indicador</th>
+                                                        <th>Valor</th>
+                                                        <th>Viabilidade</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td>VPL (Valor Presente Líquido)</td>
+                                                        <td id="vpl-indicator">R$ 0,00</td>
+                                                        <td id="vpl-viability"><span class="badge bg-secondary">Não calculado</span></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>TIR (Taxa Interna de Retorno)</td>
+                                                        <td id="tir-indicator">0%</td>
+                                                        <td id="tir-viability"><span class="badge bg-secondary">Não calculado</span></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>Payback Simples</td>
+                                                        <td id="payback-indicator">0 anos</td>
+                                                        <td id="payback-viability"><span class="badge bg-secondary">Não calculado</span></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>Payback Descontado</td>
+                                                        <td id="payback-discounted-indicator">0 anos</td>
+                                                        <td id="payback-discounted-viability"><span class="badge bg-secondary">Não calculado</span></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>Lucro Líquido Anual Médio</td>
+                                                        <td id="avg-profit-indicator">R$ 0,00</td>
+                                                        <td id="avg-profit-viability"><span class="badge bg-secondary">Não calculado</span></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>Rentabilidade</td>
+                                                        <td id="profitability-indicator">0%</td>
+                                                        <td id="profitability-viability"><span class="badge bg-secondary">Não calculado</span></td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-12">
+                                        <h5 class="mb-3"><i class="bi bi-calendar-week"></i> Fluxo de Caixa Anual</h5>
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered table-striped" id="cashflow-table">
+                                                <thead class="table-primary">
+                                                    <tr>
+                                                        <th>Ano</th>
+                                                        <th>Receita Bruta</th>
+                                                        <th>Impostos</th>
+                                                        <th>Receita Líquida</th>
+                                                        <th>Custos Fixos</th>
+                                                        <th>Custos Variáveis</th>
+                                                        <th>Lucro Bruto</th>
+                                                        <th>IR/CSLL</th>
+                                                        <th>Lucro Líquido</th>
+                                                        <th>Fluxo de Caixa</th>
+                                                        <th>Fluxo Acumulado</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <!-- Linhas serão adicionadas dinamicamente -->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Análise de Sensibilidade -->
+                    <div class="tab-pane fade" id="sensitivity">
+                        <div class="card mb-4">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0"><i class="bi bi-speedometer2"></i> Análise de Sensibilidade do VPL</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-4">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="sensitivity-variable" class="form-label">Variável para Análise</label>
+                                            <select class="form-select" id="sensitivity-variable">
+                                                <option value="revenue">Receita</option>
+                                                <option value="fixed-costs">Custos Fixos</option>
+                                                <option value="variable-costs">Custos Variáveis</option>
+                                                <option value="initial-investment">Investimento Inicial</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="sensitivity-range" class="form-label">Variação (+/- %)</label>
+                                            <input type="number" class="form-control" id="sensitivity-range" value="20" min="1" max="100">
+                                        </div>
+                                        <button id="run-sensitivity" class="btn btn-primary">
+                                            <i class="bi bi-calculator"></i> Calcular Sensibilidade
+                                        </button>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div id="sensitivity-chart-container">
+                                            <canvas id="sensitivity-chart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-12">
+                                        <h5 class="mb-3">Tabela de Sensibilidade</h5>
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered table-striped" id="sensitivity-table">
+                                                <thead class="table-primary">
+                                                    <tr>
+                                                        <th>Variação</th>
+                                                        <th>Valor da Variável</th>
+                                                        <th>VPL</th>
+                                                        <th>Mudança no VPL</th>
+                                                        <th>Viabilidade</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <!-- Linhas serão adicionadas dinamicamente -->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Plano de Marketing -->
+                    <div class="tab-pane fade" id="marketing">
+                        <div class="card mb-4">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0"><i class="bi bi-megaphone"></i> Plano de Marketing</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="product-description" class="form-label">Descrição do Produto/Serviço</label>
+                                        <textarea class="form-control" id="product-description" rows="3"></textarea>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="target-audience" class="form-label">Público-Alvo</label>
+                                        <textarea class="form-control" id="target-audience" rows="3"></textarea>
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="differential" class="form-label">Diferencial Competitivo</label>
+                                        <textarea class="form-control" id="differential" rows="3"></textarea>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="pricing-strategy" class="form-label">Estratégia de Precificação</label>
+                                        <textarea class="form-control" id="pricing-strategy" rows="3"></textarea>
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-12">
+                                        <label for="channels" class="form-label">Canais de Distribuição/Vendas</label>
+                                        <textarea class="form-control" id="channels" rows="3"></textarea>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-12">
+                                        <label for="communication" class="form-label">Estratégia de Comunicação</label>
+                                        <textarea class="form-control" id="communication" rows="3"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card mb-4">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0"><i class="bi bi-people"></i> Plano de Neuromarketing</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="emotional-appeal" class="form-label">Apelo Emocional</label>
+                                        <textarea class="form-control" id="emotional-appeal" rows="3"></textarea>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="cognitive-ease" class="form-label">Facilidade Cognitiva</label>
+                                        <textarea class="form-control" id="cognitive-ease" rows="3"></textarea>
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="storytelling" class="form-label">Storytelling</label>
+                                        <textarea class="form-control" id="storytelling" rows="3"></textarea>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="sensory-elements" class="form-label">Elementos Sensoriais</label>
+                                        <textarea class="form-control" id="sensory-elements" rows="3"></textarea>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-12">
+                                        <label for="behavioral-triggers" class="form-label">Gatilhos Comportamentais</label>
+                                        <textarea class="form-control" id="behavioral-triggers" rows="3"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Relatórios -->
+                    <div class="tab-pane fade" id="reports">
+                        <div class="card mb-4">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0"><i class="bi bi-file-earmark-text"></i> Relatórios Financeiros</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-4">
+                                    <div class="col-md-6">
+                                        <div class="card mb-3">
+                                            <div class="card-header">
+                                                <h6 class="mb-0">Resumo Financeiro</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="table-responsive">
+                                                    <table class="table table-sm">
+                                                        <tbody>
+                                                            <tr>
+                                                                <th>Investimento Inicial</th>
+                                                                <td id="report-initial-investment">R$ 0,00</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <th>Receita Total (5 anos)</th>
+                                                                <td id="report-total-revenue">R$ 0,00</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <th>Custos Totais (5 anos)</th>
+                                                                <td id="report-total-costs">R$ 0,00</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <th>Lucro Total (5 anos)</th>
+                                                                <td id="report-total-profit">R$ 0,00</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <th>Retorno sobre Investimento</th>
+                                                                <td id="report-roi">0%</td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <h6 class="mb-0">Indicadores Chave</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="table-responsive">
+                                                    <table class="table table-sm">
+                                                        <tbody>
+                                                            <tr>
+                                                                <th>Margem Bruta Média</th>
+                                                                <td id="report-gross-margin">0%</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <th>Margem Líquida Média</th>
+                                                                <td id="report-net-margin">0%</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <th>Ponto de Equilíbrio</th>
+                                                                <td id="report-break-even">R$ 0,00</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <th>Capital de Giro Necessário</th>
+                                                                <td id="report-working-capital">R$ 0,00</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <th>Valor Residual</th>
+                                                                <td id="report-residual-value">R$ 0,00</td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <h6 class="mb-0">Relatório Detalhado</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="mb-3">
+                                                    <button id="generate-full-report" class="btn btn-primary">
+                                                        <i class="bi bi-file-earmark-pdf"></i> Gerar Relatório Completo
+                                                    </button>
+                                                </div>
+                                                <div id="full-report-content" class="p-3 border rounded bg-light">
+                                                    <!-- Relatório será gerado aqui -->
+                                                    <p class="text-center text-muted">Clique no botão acima para gerar o relatório completo.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Ajuda -->
+    <div class="modal fade" id="helpModal" tabindex="-1" aria-labelledby="helpModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="helpModalLabel">Ajuda - AgroCalc</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <h6>Como usar a calculadora:</h6>
+                    <ol>
+                        <li>Preencha as informações básicas do seu projeto</li>
+                        <li>Adicione todos os custos fixos (CAPEX e OPEX)</li>
+                        <li>Adicione os custos variáveis</li>
+                        <li>Defina suas receitas e crescimento esperado</li>
+                        <li>Configure os impostos e taxas aplicáveis</li>
+                        <li>Clique em "Calcular Tudo" para ver os resultados</li>
+                        <li>Analise os indicadores financeiros e a sensibilidade</li>
+                        <li>Complete o plano de marketing e neuromarketing</li>
+                        <li>Gere relatórios e exporte os resultados</li>
+                    </ol>
+                    <h6 class="mt-3">Glossário:</h6>
+                    <ul>
+                        <li><strong>CAPEX</strong>: Gastos de capital (investimentos em ativos)</li>
+                        <li><strong>OPEX</strong>: Gastos operacionais (custos recorrentes)</li>
+                        <li><strong>VPL</strong>: Valor Presente Líquido - valor atual dos fluxos de caixa futuros</li>
+                        <li><strong>TIR</strong>: Taxa Interna de Retorno - taxa que zera o VPL</li>
+                        <li><strong>Payback</strong>: Tempo para recuperar o investimento inicial</li>
+                        <li><strong>TMA</strong>: Taxa Mínima de Atratividade - retorno mínimo esperado</li>
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script>
+        // Variáveis globais
+        let fixedCosts = [];
+        let variableCosts = [];
+        let revenues = [];
+        let cashFlow = [];
+        let financialChart = null;
+        let sensitivityChart = null;
+
+        // Formatação monetária (usando vírgula para centavos e ponto para milhares)
+        const formatMoney = (value) => {
+            return value.toLocaleString('pt-BR', { 
+                style: 'currency', 
+                currency: 'BRL',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        };
+
+        const formatNumber = (value, decimals = 2) => {
+            return value.toLocaleString('pt-BR', { 
+                minimumFractionDigits: decimals, 
+                maximumFractionDigits: decimals 
+            });
+        };
+
+        const formatPercent = (value) => {
+            return (value / 100).toLocaleString('pt-BR', { 
+                style: 'percent', 
+                minimumFractionDigits: 2 
+            });
+        };
+
+        // Tema escuro/claro
+        document.getElementById('theme-toggle').addEventListener('click', function() {
+            document.body.classList.toggle('dark-mode');
+            if (document.body.classList.contains('dark-mode')) {
+                this.innerHTML = '<i class="bi bi-sun-fill"></i> Tema Claro';
+                localStorage.setItem('darkMode', 'enabled');
+            } else {
+                this.innerHTML = '<i class="bi bi-moon-fill"></i> Tema Escuro';
+                localStorage.setItem('darkMode', 'disabled');
+            }
+            
+            // Atualizar gráficos
+            if (financialChart) financialChart.update();
+            if (sensitivityChart) sensitivityChart.update();
+        });
+
+        // Verificar tema salvo no localStorage
+        if (localStorage.getItem('darkMode') === 'enabled') {
+            document.body.classList.add('dark-mode');
+            document.getElementById('theme-toggle').innerHTML = '<i class="bi bi-sun-fill"></i> Tema Claro';
+        }
+
+        // Salvar dados no localStorage
+        document.getElementById('save-data').addEventListener('click', function() {
+            const projectData = {
+                projectName: document.getElementById('project-name').value,
+                businessType: document.getElementById('business-type').value,
+                projectDuration: document.getElementById('project-duration').value,
+                initialInvestment: document.getElementById('initial-investment').value,
+                tma: document.getElementById('tma').value,
+                selic: document.getElementById('selic').value,
+                inflation: document.getElementById('inflation').value,
+                projectDescription: document.getElementById('project-description').value,
+                fixedCosts: fixedCosts,
+                variableCosts: variableCosts,
+                revenues: revenues,
+                icms: document.getElementById('icms').value,
+                pis: document.getElementById('pis').value,
+                cofins: document.getElementById('cofins').value,
+                ir: document.getElementById('ir').value,
+                csll: document.getElementById('csll').value,
+                marketing: {
+                    productDescription: document.getElementById('product-description').value,
+                    targetAudience: document.getElementById('target-audience').value,
+                    differential: document.getElementById('differential').value,
+                    pricingStrategy: document.getElementById('pricing-strategy').value,
+                    channels: document.getElementById('channels').value,
+                    communication: document.getElementById('communication').value,
+                    emotionalAppeal: document.getElementById('emotional-appeal').value,
+                    cognitiveEase: document.getElementById('cognitive-ease').value,
+                    storytelling: document.getElementById('storytelling').value,
+                    sensoryElements: document.getElementById('sensory-elements').value,
+                    behavioralTriggers: document.getElementById('behavioral-triggers').value
+                }
+            };
+            
+            localStorage.setItem('agroCalcData', JSON.stringify(projectData));
+            alert('Dados salvos com sucesso!');
+        });
+
+        // Carregar dados do localStorage
+        document.getElementById('load-data').addEventListener('click', function() {
+            const savedData = localStorage.getItem('agroCalcData');
+            if (savedData) {
+                const projectData = JSON.parse(savedData);
+                
+                // Preencher informações básicas
+                document.getElementById('project-name').value = projectData.projectName || '';
+                document.getElementById('business-type').value = projectData.businessType || 'aquicultura';
+                document.getElementById('project-duration').value = projectData.projectDuration || 5;
+                document.getElementById('initial-investment').value = projectData.initialInvestment || 100000;
+                document.getElementById('tma').value = projectData.tma || 10;
+                document.getElementById('selic').value = projectData.selic || 6.5;
+                document.getElementById('inflation').value = projectData.inflation || 3.5;
+                document.getElementById('project-description').value = projectData.projectDescription || '';
+                
+                // Preencher impostos
+                document.getElementById('icms').value = projectData.icms || 12;
+                document.getElementById('pis').value = projectData.pis || 1.65;
+                document.getElementById('cofins').value = projectData.cofins || 7.6;
+                document.getElementById('ir').value = projectData.ir || 15;
+                document.getElementById('csll').value = projectData.csll || 9;
+                
+                // Carregar custos e receitas
+                fixedCosts = projectData.fixedCosts || [];
+                variableCosts = projectData.variableCosts || [];
+                revenues = projectData.revenues || [];
+                
+                updateFixedCostsTable();
+                updateVariableCostsTable();
+                updateRevenueTable();
+                
+                // Carregar marketing
+                if (projectData.marketing) {
+                    document.getElementById('product-description').value = projectData.marketing.productDescription || '';
+                    document.getElementById('target-audience').value = projectData.marketing.targetAudience || '';
+                    document.getElementById('differential').value = projectData.marketing.differential || '';
+                    document.getElementById('pricing-strategy').value = projectData.marketing.pricingStrategy || '';
+                    document.getElementById('channels').value = projectData.marketing.channels || '';
+                    document.getElementById('communication').value = projectData.marketing.communication || '';
+                    document.getElementById('emotional-appeal').value = projectData.marketing.emotionalAppeal || '';
+                    document.getElementById('cognitive-ease').value = projectData.marketing.cognitiveEase || '';
+                    document.getElementById('storytelling').value = projectData.marketing.storytelling || '';
+                    document.getElementById('sensory-elements').value = projectData.marketing.sensoryElements || '';
+                    document.getElementById('behavioral-triggers').value = projectData.marketing.behavioralTriggers || '';
+                }
+                
+                alert('Dados carregados com sucesso!');
+            } else {
+                alert('Nenhum dado salvo encontrado.');
+            }
+        });
+
+        // Limpar dados
+        document.getElementById('clear-data').addEventListener('click', function() {
+            if (confirm('Tem certeza que deseja limpar todos os dados? Esta ação não pode ser desfeita.')) {
+                localStorage.removeItem('agroCalcData');
+                
+                // Limpar formulários
+                document.getElementById('project-name').value = '';
+                document.getElementById('business-type').value = 'aquicultura';
+                document.getElementById('project-duration').value = 5;
+                document.getElementById('initial-investment').value = 100000;
+                document.getElementById('tma').value = 10;
+                document.getElementById('selic').value = 6.5;
+                document.getElementById('inflation').value = 3.5;
+                document.getElementById('project-description').value = '';
+                
+                document.getElementById('icms').value = 12;
+                document.getElementById('pis').value = 1.65;
+                document.getElementById('cofins').value = 7.6;
+                document.getElementById('ir').value = 15;
+                document.getElementById('csll').value = 9;
+                
+                fixedCosts = [];
+                variableCosts = [];
+                revenues = [];
+                cashFlow = [];
+                
+                updateFixedCostsTable();
+                updateVariableCostsTable();
+                updateRevenueTable();
+                
+                // Limpar marketing
+                document.getElementById('product-description').value = '';
+                document.getElementById('target-audience').value = '';
+                document.getElementById('differential').value = '';
+                document.getElementById('pricing-strategy').value = '';
+                document.getElementById('channels').value = '';
+                document.getElementById('communication').value = '';
+                document.getElementById('emotional-appeal').value = '';
+                document.getElementById('cognitive-ease').value = '';
+                document.getElementById('storytelling').value = '';
+                document.getElementById('sensory-elements').value = '';
+                document.getElementById('behavioral-triggers').value = '';
+                
+                // Limpar resultados
+                document.getElementById('vpl-result').textContent = 'R$ 0,00';
+                document.getElementById('tir-result').textContent = '0%';
+                document.getElementById('payback-result').textContent = '0 anos';
+                
+                document.getElementById('vpl-indicator').textContent = 'R$ 0,00';
+                document.getElementById('tir-indicator').textContent = '0%';
+                document.getElementById('payback-indicator').textContent = '0 anos';
+                document.getElementById('payback-discounted-indicator').textContent = '0 anos';
+                
+                document.getElementById('vpl-viability').innerHTML = '<span class="badge bg-secondary">Não calculado</span>';
+                document.getElementById('tir-viability').innerHTML = '<span class="badge bg-secondary">Não calculado</span>';
+                document.getElementById('payback-viability').innerHTML = '<span class="badge bg-secondary">Não calculado</span>';
+                document.getElementById('payback-discounted-viability').innerHTML = '<span class="badge bg-secondary">Não calculado</span>';
+                document.getElementById('avg-profit-indicator').textContent = 'R$ 0,00';
+                document.getElementById('avg-profit-viability').innerHTML = '<span class="badge bg-secondary">Não calculado</span>';
+                document.getElementById('profitability-indicator').textContent = '0%';
+                document.getElementById('profitability-viability').innerHTML = '<span class="badge bg-secondary">Não calculado</span>';
+                
+                // Limpar tabela de fluxo de caixa
+                document.querySelector('#cashflow-table tbody').innerHTML = '';
+                
+                // Limpar relatórios
+                document.getElementById('report-initial-investment').textContent = 'R$ 0,00';
+                document.getElementById('report-total-revenue').textContent = 'R$ 0,00';
+                document.getElementById('report-total-costs').textContent = 'R$ 0,00';
+                document.getElementById('report-total-profit').textContent = 'R$ 0,00';
+                document.getElementById('report-roi').textContent = '0%';
+                document.getElementById('report-gross-margin').textContent = '0%';
+                document.getElementById('report-net-margin').textContent = '0%';
+                document.getElementById('report-break-even').textContent = 'R$ 0,00';
+                document.getElementById('report-working-capital').textContent = 'R$ 0,00';
+                document.getElementById('report-residual-value').textContent = 'R$ 0,00';
+                
+                // Limpar gráficos
+                if (financialChart) {
+                    financialChart.destroy();
+                    financialChart = null;
+                }
+                if (sensitivityChart) {
+                    sensitivityChart.destroy();
+                    sensitivityChart = null;
+                }
+                
+                alert('Todos os dados foram limpos com sucesso!');
+            }
+        });
+
+        // Adicionar custo fixo
+        document.getElementById('add-fixed-cost').addEventListener('click', function() {
+            const name = document.getElementById('fixed-cost-name').value;
+            const value = parseFloat(document.getElementById('fixed-cost-value').value) || 0;
+            const type = document.getElementById('fixed-cost-type').value;
+            
+            if (!name) {
+                alert('Por favor, insira um nome para o custo.');
+                return;
+            }
+            
+            fixedCosts.push({
+                id: Date.now(),
+                name,
+                monthlyValue: value,
+                type
+            });
+            
+            updateFixedCostsTable();
+            document.getElementById('fixed-cost-name').value = '';
+            document.getElementById('fixed-cost-value').value = '';
+        });
+
+        // Atualizar tabela de custos fixos
+        const updateFixedCostsTable = () => {
+            const tbody = document.querySelector('#fixed-costs-table tbody');
+            tbody.innerHTML = '';
+            
+            let totalMonthly = 0;
+            let totalYearly = 0;
+            
+            fixedCosts.forEach(cost => {
+                const yearlyValue = cost.monthlyValue * 12;
+                totalMonthly += cost.monthlyValue;
+                totalYearly += yearlyValue;
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${cost.name}</td>
+                    <td>${formatMoney(cost.monthlyValue)}</td>
+                    <td>${formatMoney(yearlyValue)}</td>
+                    <td>${cost.type === 'capex' ? 'CAPEX' : 'OPEX'}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-danger delete-fixed-cost" data-id="${cost.id}">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+            
+            document.getElementById('total-fixed-monthly').textContent = formatMoney(totalMonthly);
+            document.getElementById('total-fixed-yearly').textContent = formatMoney(totalYearly);
+            
+            // Adicionar eventos aos botões de deletar
+            document.querySelectorAll('.delete-fixed-cost').forEach(button => {
+                button.addEventListener('click', function() {
+                    const id = parseInt(this.getAttribute('data-id'));
+                    fixedCosts = fixedCosts.filter(cost => cost.id !== id);
+                    updateFixedCostsTable();
+                });
+            });
+        };
+
+        // Adicionar custo variável
+        document.getElementById('add-variable-cost').addEventListener('click', function() {
+            const name = document.getElementById('variable-cost-name').value;
+            const unitValue = parseFloat(document.getElementById('variable-cost-unit').value) || 0;
+            const quantity = parseFloat(document.getElementById('variable-cost-quantity').value) || 0;
+            
+            if (!name) {
+                alert('Por favor, insira um nome para o custo.');
+                return;
+            }
+            
+            variableCosts.push({
+                id: Date.now(),
+                name,
+                unitValue,
+                monthlyQuantity: quantity
+            });
+            
+            updateVariableCostsTable();
+            document.getElementById('variable-cost-name').value = '';
+            document.getElementById('variable-cost-unit').value = '';
+            document.getElementById('variable-cost-quantity').value = '';
+        });
+
+        // Atualizar tabela de custos variáveis
+        const updateVariableCostsTable = () => {
+            const tbody = document.querySelector('#variable-costs-table tbody');
+            tbody.innerHTML = '';
+            
+            let totalQuantity = 0;
+            let totalMonthly = 0;
+            let totalYearly = 0;
+            
+            variableCosts.forEach(cost => {
+                const monthlyValue = cost.unitValue * cost.monthlyQuantity;
+                const yearlyValue = monthlyValue * 12;
+                totalQuantity += cost.monthlyQuantity;
+                totalMonthly += monthlyValue;
+                totalYearly += yearlyValue;
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${cost.name}</td>
+                    <td>${formatMoney(cost.unitValue)}</td>
+                    <td>${formatNumber(cost.monthlyQuantity)}</td>
+                    <td>${formatMoney(monthlyValue)}</td>
+                    <td>${formatMoney(yearlyValue)}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-danger delete-variable-cost" data-id="${cost.id}">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+            
+            document.getElementById('total-variable-quantity').textContent = formatNumber(totalQuantity);
+            document.getElementById('total-variable-monthly').textContent = formatMoney(totalMonthly);
+            document.getElementById('total-variable-yearly').textContent = formatMoney(totalYearly);
+            
+            // Adicionar eventos aos botões de deletar
+            document.querySelectorAll('.delete-variable-cost').forEach(button => {
+                button.addEventListener('click', function() {
+                    const id = parseInt(this.getAttribute('data-id'));
+                    variableCosts = variableCosts.filter(cost => cost.id !== id);
+                    updateVariableCostsTable();
+                });
+            });
+        };
+
+        // Adicionar receita
+        document.getElementById('add-revenue').addEventListener('click', function() {
+            const name = document.getElementById('revenue-name').value;
+            const unitPrice = parseFloat(document.getElementById('revenue-unit').value) || 0;
+            const quantity = parseFloat(document.getElementById('revenue-quantity').value) || 0;
+            const growth = parseFloat(document.getElementById('revenue-growth').value) || 0;
+            
+            if (!name) {
+                alert('Por favor, insira um nome para a receita.');
+                return;
+            }
+            
+            revenues.push({
+                id: Date.now(),
+                name,
+                unitPrice,
+                monthlyQuantity: quantity,
+                annualGrowth: growth
+            });
+            
+            updateRevenueTable();
+            document.getElementById('revenue-name').value = '';
+            document.getElementById('revenue-unit').value = '';
+            document.getElementById('revenue-quantity').value = '';
+            document.getElementById('revenue-growth').value = '5';
+        });
+
+        // Atualizar tabela de receitas
+        const updateRevenueTable = () => {
+            const tbody = document.querySelector('#revenue-table tbody');
+            tbody.innerHTML = '';
+            
+            let totalQuantity = 0;
+            let totalMonthly = 0;
+            let totalYearly = 0;
+            
+            revenues.forEach(revenue => {
+                const monthlyValue = revenue.unitPrice * revenue.monthlyQuantity;
+                const yearlyValue = monthlyValue * 12;
+                totalQuantity += revenue.monthlyQuantity;
+                totalMonthly += monthlyValue;
+                totalYearly += yearlyValue;
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${revenue.name}</td>
+                    <td>${formatMoney(revenue.unitPrice)}</td>
+                    <td>${formatNumber(revenue.monthlyQuantity)}</td>
+                    <td>${formatMoney(monthlyValue)}</td>
+                    <td>${formatMoney(yearlyValue)}</td>
+                    <td>${formatNumber(revenue.annualGrowth)}%</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-danger delete-revenue" data-id="${revenue.id}">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+            
+            document.getElementById('total-revenue-quantity').textContent = formatNumber(totalQuantity);
+            document.getElementById('total-revenue-monthly').textContent = formatMoney(totalMonthly);
+            document.getElementById('total-revenue-yearly').textContent = formatMoney(totalYearly);
+            
+            // Adicionar eventos aos botões de deletar
+            document.querySelectorAll('.delete-revenue').forEach(button => {
+                button.addEventListener('click', function() {
+                    const id = parseInt(this.getAttribute('data-id'));
+                    revenues = revenues.filter(revenue => revenue.id !== id);
+                    updateRevenueTable();
+                });
+            });
+        };
+
+        // Calcular todos os indicadores
+        document.getElementById('calculate-all').addEventListener('click', calculateAll);
+
+        function calculateAll() {
+            // Verificar se há dados suficientes
+            if (fixedCosts.length === 0 && variableCosts.length === 0) {
+                alert('Por favor, adicione pelo menos um custo (fixo ou variável) antes de calcular.');
+                return;
+            }
+            
+            if (revenues.length === 0) {
+                alert('Por favor, adicione pelo menos uma receita antes de calcular.');
+                return;
+            }
+            
+            const projectDuration = parseInt(document.getElementById('project-duration').value) || 5;
+            const initialInvestment = parseFloat(document.getElementById('initial-investment').value) || 0;
+            const tma = parseFloat(document.getElementById('tma').value) || 10;
+            const selic = parseFloat(document.getElementById('selic').value) || 6.5;
+            const inflation = parseFloat(document.getElementById('inflation').value) || 3.5;
+            
+            const icms = parseFloat(document.getElementById('icms').value) || 12;
+            const pis = parseFloat(document.getElementById('pis').value) || 1.65;
+            const cofins = parseFloat(document.getElementById('cofins').value) || 7.6;
+            const ir = parseFloat(document.getElementById('ir').value) || 15;
+            const csll = parseFloat(document.getElementById('csll').value) || 9;
+            
+            // Calcular fluxo de caixa
+            cashFlow = calculateCashFlow(projectDuration, initialInvestment, icms, pis, cofins, ir, csll);
+            
+            // Calcular indicadores financeiros
+            const vpl = calculateVPL(cashFlow, tma);
+            const tir = calculateTIR(cashFlow);
+            const payback = calculatePayback(cashFlow);
+            const paybackDiscounted = calculateDiscountedPayback(cashFlow, tma);
+            
+            // Atualizar resultados
+            document.getElementById('vpl-result').textContent = formatMoney(vpl);
+            document.getElementById('tir-result').textContent = formatPercent(tir / 100);
+            document.getElementById('payback-result').textContent = `${payback.toFixed(1)} anos`;
+            
+            document.getElementById('vpl-indicator').textContent = formatMoney(vpl);
+            document.getElementById('tir-indicator').textContent = formatPercent(tir / 100);
+            document.getElementById('payback-indicator').textContent = `${payback.toFixed(1)} anos`;
+            document.getElementById('payback-discounted-indicator').textContent = `${paybackDiscounted.toFixed(1)} anos`;
+            
+            // Atualizar viabilidade
+            updateViability(vpl, tir, tma, payback, projectDuration);
+            
+            // Atualizar tabela de fluxo de caixa
+            updateCashFlowTable(cashFlow);
+            
+            // Atualizar gráfico financeiro
+            updateFinancialChart(cashFlow);
+            
+            // Atualizar relatórios
+            updateReports(cashFlow, initialInvestment, vpl, tir, payback, paybackDiscounted);
+        }
+
+        // Calcular fluxo de caixa
+        function calculateCashFlow(years, initialInvestment, icms, pis, cofins, ir, csll) {
+            const cashFlow = [];
+            
+            // Ano 0 (investimento inicial)
+            cashFlow.push({
+                year: 0,
+                grossRevenue: 0,
+                taxes: 0,
+                netRevenue: 0,
+                fixedCosts: 0,
+                variableCosts: 0,
+                grossProfit: 0,
+                taxesProfit: 0,
+                netProfit: 0,
+                cashFlow: -initialInvestment,
+                accumulatedCashFlow: -initialInvestment
+            });
+            
+            // Calcular totais anuais
+            const totalFixedYearly = fixedCosts.reduce((sum, cost) => sum + (cost.monthlyValue * 12), 0);
+            const totalVariableYearly = variableCosts.reduce((sum, cost) => sum + (cost.unitValue * cost.monthlyQuantity * 12), 0);
+            const totalRevenueYearly = revenues.reduce((sum, revenue) => sum + (revenue.unitPrice * revenue.monthlyQuantity * 12), 0);
+            
+            // Calcular anos subsequentes
+            for (let year = 1; year <= years; year++) {
+                // Calcular receitas com crescimento
+                let grossRevenue = 0;
+                revenues.forEach(revenue => {
+                    const growthFactor = Math.pow(1 + (revenue.annualGrowth / 100), year - 1);
+                    grossRevenue += revenue.unitPrice * revenue.monthlyQuantity * 12 * growthFactor;
+                });
+                
+                // Calcular impostos sobre vendas (ICMS, PIS, COFINS)
+                const taxes = grossRevenue * (icms + pis + cofins) / 100;
+                const netRevenue = grossRevenue - taxes;
+                
+                // Calcular custos variáveis (assumindo crescimento igual ao de receitas)
+                let variableCostsTotal = 0;
+                variableCosts.forEach(cost => {
+                    const growthFactor = Math.pow(1 + (revenues[0]?.annualGrowth / 100 || 0), year - 1);
+                    variableCostsTotal += cost.unitValue * cost.monthlyQuantity * 12 * growthFactor;
+                });
+                
+                // Calcular lucro bruto
+                const grossProfit = netRevenue - totalFixedYearly - variableCostsTotal;
+                
+                // Calcular impostos sobre o lucro (IR e CSLL)
+                let taxesProfit = 0;
+                if (grossProfit > 0) {
+                    taxesProfit = grossProfit * (ir + csll) / 100;
+                }
+                
+                // Calcular lucro líquido
+                const netProfit = grossProfit - taxesProfit;
+                
+                // Calcular fluxo de caixa
+                const yearCashFlow = netProfit;
+                const accumulatedCashFlow = cashFlow[year - 1].accumulatedCashFlow + yearCashFlow;
+                
+                cashFlow.push({
+                    year,
+                    grossRevenue,
+                    taxes,
+                    netRevenue,
+                    fixedCosts: totalFixedYearly,
+                    variableCosts: variableCostsTotal,
+                    grossProfit,
+                    taxesProfit,
+                    netProfit,
+                    cashFlow: yearCashFlow,
+                    accumulatedCashFlow
+                });
+            }
+            
+            return cashFlow;
+        }
+
+        // Calcular VPL
+        function calculateVPL(cashFlow, discountRate) {
+            let vpl = 0;
+            for (let i = 0; i < cashFlow.length; i++) {
+                const year = cashFlow[i].year;
+                const flow = cashFlow[i].cashFlow;
+                vpl += flow / Math.pow(1 + discountRate / 100, year);
+            }
+            return vpl;
+        }
+
+        // Calcular TIR (aproximação)
+        function calculateTIR(cashFlow) {
+            // Método de tentativa e erro com Newton-Raphson simplificado
+            let tir = 0;
+            let precision = 0.0001;
+            let maxIterations = 100;
+            let iteration = 0;
+            let testVPL = 0;
+            
+            do {
+                testVPL = 0;
+                let testVPLDerivative = 0;
+                
+                for (let i = 0; i < cashFlow.length; i++) {
+                    const year = cashFlow[i].year;
+                    const flow = cashFlow[i].cashFlow;
+                    testVPL += flow / Math.pow(1 + tir, year);
+                    testVPLDerivative += -year * flow / Math.pow(1 + tir, year + 1);
+                }
+                
+                if (Math.abs(testVPL) < precision) break;
+                
+                const newTir = tir - testVPL / testVPLDerivative;
+                
+                if (Math.abs(newTir - tir) < precision) {
+                    tir = newTir;
+                    break;
+                }
+                
+                tir = newTir;
+                iteration++;
+            } while (iteration < maxIterations);
+            
+            return tir * 100; // Retorna em porcentagem
+        }
+
+        // Calcular Payback Simples
+        function calculatePayback(cashFlow) {
+            const initialInvestment = -cashFlow[0].cashFlow;
+            let accumulated = 0;
+            let paybackYear = cashFlow.length - 1;
+            
+            for (let i = 1; i < cashFlow.length; i++) {
+                accumulated += cashFlow[i].cashFlow;
+                if (accumulated >= initialInvestment) {
+                    // Interpolação linear para precisão
+                    const prevYear = i - 1;
+                    const prevAccumulated = accumulated - cashFlow[i].cashFlow;
+                    const fraction = (initialInvestment - prevAccumulated) / (accumulated - prevAccumulated);
+                    paybackYear = prevYear + fraction;
+                    break;
+                }
+            }
+            
+            return paybackYear;
+        }
+
+        // Calcular Payback Descontado
+        function calculateDiscountedPayback(cashFlow, discountRate) {
+            const initialInvestment = -cashFlow[0].cashFlow;
+            let accumulated = 0;
+            let paybackYear = cashFlow.length - 1;
+            
+            for (let i = 1; i < cashFlow.length; i++) {
+                const discountedFlow = cashFlow[i].cashFlow / Math.pow(1 + discountRate / 100, i);
+                accumulated += discountedFlow;
+                if (accumulated >= initialInvestment) {
+                    // Interpolação linear para precisão
+                    const prevYear = i - 1;
+                    const prevAccumulated = accumulated - discountedFlow;
+                    const fraction = (initialInvestment - prevAccumulated) / (accumulated - prevAccumulated);
+                    paybackYear = prevYear + fraction;
+                    break;
+                }
+            }
+            
+            return paybackYear;
+        }
+
+        // Atualizar viabilidade
+        function updateViability(vpl, tir, tma, payback, projectDuration) {
+            // VPL
+            const vplElement = document.getElementById('vpl-viability');
+            if (vpl > 0) {
+                vplElement.innerHTML = '<span class="badge bg-success">Viável</span>';
+                document.getElementById('vpl-result').classList.add('positive');
+                document.getElementById('vpl-result').classList.remove('negative');
+            } else {
+                vplElement.innerHTML = '<span class="badge bg-danger">Inviável</span>';
+                document.getElementById('vpl-result').classList.add('negative');
+                document.getElementById('vpl-result').classList.remove('positive');
+            }
+            
+            // TIR
+            const tirElement = document.getElementById('tir-viability');
+            if (tir > tma) {
+                tirElement.innerHTML = '<span class="badge bg-success">Viável</span>';
+                document.getElementById('tir-result').classList.add('positive');
+                document.getElementById('tir-result').classList.remove('negative');
+            } else {
+                tirElement.innerHTML = '<span class="badge bg-danger">Inviável</span>';
+                document.getElementById('tir-result').classList.add('negative');
+                document.getElementById('tir-result').classList.remove('positive');
+            }
+            
+            // Payback
+            const paybackElement = document.getElementById('payback-viability');
+            const paybackDiscountedElement = document.getElementById('payback-discounted-viability');
+            
+            if (payback <= projectDuration * 0.6) {
+                paybackElement.innerHTML = '<span class="badge bg-success">Viável</span>';
+                document.getElementById('payback-result').classList.add('positive');
+                document.getElementById('payback-result').classList.remove('negative');
+            } else if (payback <= projectDuration) {
+                paybackElement.innerHTML = '<span class="badge bg-warning text-dark">Atenção</span>';
+                document.getElementById('payback-result').classList.remove('positive', 'negative');
+            } else {
+                paybackElement.innerHTML = '<span class="badge bg-danger">Inviável</span>';
+                document.getElementById('payback-result').classList.add('negative');
+                document.getElementById('payback-result').classList.remove('positive');
+            }
+            
+            // Payback descontado (usando critério mais rígido)
+            const paybackDiscounted = calculateDiscountedPayback(cashFlow, tma);
+            if (paybackDiscounted <= projectDuration * 0.5) {
+                paybackDiscountedElement.innerHTML = '<span class="badge bg-success">Viável</span>';
+            } else if (paybackDiscounted <= projectDuration) {
+                paybackDiscountedElement.innerHTML = '<span class="badge bg-warning text-dark">Atenção</span>';
+            } else {
+                paybackDiscountedElement.innerHTML = '<span class="badge bg-danger">Inviável</span>';
+            }
+            
+            // Lucro líquido médio
+            const avgProfit = cashFlow.slice(1).reduce((sum, year) => sum + year.netProfit, 0) / (cashFlow.length - 1);
+            document.getElementById('avg-profit-indicator').textContent = formatMoney(avgProfit);
+            
+            const avgProfitElement = document.getElementById('avg-profit-viability');
+            if (avgProfit > 0) {
+                avgProfitElement.innerHTML = '<span class="badge bg-success">Positivo</span>';
+            } else {
+                avgProfitElement.innerHTML = '<span class="badge bg-danger">Negativo</span>';
+            }
+            
+            // Rentabilidade
+            const initialInvestment = -cashFlow[0].cashFlow;
+            const totalProfit = cashFlow.slice(1).reduce((sum, year) => sum + year.netProfit, 0);
+            const profitability = (totalProfit / initialInvestment) * 100;
+            document.getElementById('profitability-indicator').textContent = formatPercent(profitability / 100);
+            
+            const profitabilityElement = document.getElementById('profitability-viability');
+            if (profitability > tma) {
+                profitabilityElement.innerHTML = '<span class="badge bg-success">Boa</span>';
+            } else if (profitability > 0) {
+                profitabilityElement.innerHTML = '<span class="badge bg-warning text-dark">Regular</span>';
+            } else {
+                profitabilityElement.innerHTML = '<span class="badge bg-danger">Ruim</span>';
+            }
+        }
+
+        // Atualizar tabela de fluxo de caixa
+        function updateCashFlowTable(cashFlow) {
+            const tbody = document.querySelector('#cashflow-table tbody');
+            tbody.innerHTML = '';
+            
+            cashFlow.forEach(year => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${year.year}</td>
+                    <td>${formatMoney(year.grossRevenue)}</td>
+                    <td>${formatMoney(year.taxes)}</td>
+                    <td>${formatMoney(year.netRevenue)}</td>
+                    <td>${formatMoney(year.fixedCosts)}</td>
+                    <td>${formatMoney(year.variableCosts)}</td>
+                    <td class="${year.grossProfit >= 0 ? 'positive' : 'negative'}">${formatMoney(year.grossProfit)}</td>
+                    <td>${formatMoney(year.taxesProfit)}</td>
+                    <td class="${year.netProfit >= 0 ? 'positive' : 'negative'}">${formatMoney(year.netProfit)}</td>
+                    <td class="${year.cashFlow >= 0 ? 'positive' : 'negative'}">${formatMoney(year.cashFlow)}</td>
+                    <td class="${year.accumulatedCashFlow >= 0 ? 'positive' : 'negative'}">${formatMoney(year.accumulatedCashFlow)}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Atualizar gráfico financeiro
+        function updateFinancialChart(cashFlow) {
+            const ctx = document.getElementById('financial-chart').getContext('2d');
+            
+            // Destruir gráfico anterior se existir
+            if (financialChart) {
+                financialChart.destroy();
+            }
+            
+            const labels = cashFlow.map(year => `Ano ${year.year}`);
+            const revenueData = cashFlow.map(year => year.grossRevenue);
+            const costData = cashFlow.map(year => year.fixedCosts + year.variableCosts);
+            const profitData = cashFlow.map(year => year.netProfit);
+            const cashFlowData = cashFlow.map(year => year.cashFlow);
+            
+            financialChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Receita Bruta',
+                            data: revenueData,
+                            backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Custos Totais',
+                            data: costData,
+                            backgroundColor: 'rgba(255, 99, 132, 0.7)',
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Lucro Líquido',
+                            data: profitData,
+                            backgroundColor: 'rgba(75, 192, 192, 0.7)',
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 1,
+                            type: 'line',
+                            fill: false
+                        },
+                        {
+                            label: 'Fluxo de Caixa',
+                            data: cashFlowData,
+                            backgroundColor: 'rgba(153, 102, 255, 0.7)',
+                            borderColor: 'rgba(153, 102, 255, 1)',
+                            borderWidth: 1,
+                            type: 'line',
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Desempenho Financeiro por Ano'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    label += formatMoney(context.raw);
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return formatMoney(value);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Atualizar relatórios
+        function updateReports(cashFlow, initialInvestment, vpl, tir, payback, paybackDiscounted) {
+            // Resumo financeiro
+            document.getElementById('report-initial-investment').textContent = formatMoney(initialInvestment);
+            
+            const totalRevenue = cashFlow.slice(1).reduce((sum, year) => sum + year.grossRevenue, 0);
+            document.getElementById('report-total-revenue').textContent = formatMoney(totalRevenue);
+            
+            const totalCosts = cashFlow.slice(1).reduce((sum, year) => sum + year.fixedCosts + year.variableCosts, 0);
+            document.getElementById('report-total-costs').textContent = formatMoney(totalCosts);
+            
+            const totalProfit = cashFlow.slice(1).reduce((sum, year) => sum + year.netProfit, 0);
+            document.getElementById('report-total-profit').textContent = formatMoney(totalProfit);
+            
+            const roi = (totalProfit / initialInvestment) * 100;
+            document.getElementById('report-roi').textContent = formatPercent(roi / 100);
+            
+            // Indicadores chave
+            const avgGrossMargin = cashFlow.slice(1).reduce((sum, year) => sum + (year.grossProfit / year.grossRevenue * 100), 0) / (cashFlow.length - 1);
+            document.getElementById('report-gross-margin').textContent = formatPercent(avgGrossMargin / 100);
+            
+            const avgNetMargin = cashFlow.slice(1).reduce((sum, year) => sum + (year.netProfit / year.grossRevenue * 100), 0) / (cashFlow.length - 1);
+            document.getElementById('report-net-margin').textContent = formatPercent(avgNetMargin / 100);
+            
+            // Ponto de equilíbrio (aproximado)
+            const avgFixedCosts = cashFlow.slice(1).reduce((sum, year) => sum + year.fixedCosts, 0) / (cashFlow.length - 1);
+            const avgVariableCosts = cashFlow.slice(1).reduce((sum, year) => sum + year.variableCosts, 0) / (cashFlow.length - 1);
+            const avgRevenue = cashFlow.slice(1).reduce((sum, year) => sum + year.grossRevenue, 0) / (cashFlow.length - 1);
+            
+            const contributionMargin = 1 - (avgVariableCosts / avgRevenue);
+            const breakEven = avgFixedCosts / contributionMargin;
+            document.getElementById('report-break-even').textContent = formatMoney(breakEven);
+            
+            // Capital de giro (3 meses de custos fixos + 1 mês de custos variáveis)
+            const workingCapital = (avgFixedCosts / 4) + (avgVariableCosts / 12);
+            document.getElementById('report-working-capital').textContent = formatMoney(workingCapital);
+            
+            // Valor residual (20% do investimento inicial)
+            const residualValue = initialInvestment * 0.2;
+            document.getElementById('report-residual-value').textContent = formatMoney(residualValue);
+        }
+
+        // Análise de sensibilidade
+        document.getElementById('run-sensitivity').addEventListener('click', function() {
+            const variable = document.getElementById('sensitivity-variable').value;
+            const range = parseFloat(document.getElementById('sensitivity-range').value) || 20;
+            
+            runSensitivityAnalysis(variable, range);
+        });
+
+        function runSensitivityAnalysis(variable, range) {
+            const steps = 5; // -20%, -10%, 0%, +10%, +20%
+            const sensitivityData = [];
+            
+            const originalCashFlow = [...cashFlow];
+            const tma = parseFloat(document.getElementById('tma').value) || 10;
+            
+            for (let i = -steps / 2; i <= steps / 2; i++) {
+                const variation = (i * range / (steps / 2));
+                let modifiedCashFlow;
+                
+                // Aplicar variação à variável selecionada
+                switch (variable) {
+                    case 'revenue':
+                        modifiedCashFlow = originalCashFlow.map(year => {
+                            if (year.year === 0) return year;
+                            const factor = 1 + (variation / 100);
+                            return {
+                                ...year,
+                                grossRevenue: year.grossRevenue * factor,
+                                netRevenue: year.netRevenue * factor,
+                                grossProfit: year.grossProfit * factor,
+                                taxesProfit: year.taxesProfit * factor,
+                                netProfit: year.netProfit * factor,
+                                cashFlow: year.cashFlow * factor
+                            };
+                        });
+                        break;
+                        
+                    case 'fixed-costs':
+                        modifiedCashFlow = originalCashFlow.map(year => {
+                            if (year.year === 0) return year;
+                            const factor = 1 + (variation / 100);
+                            return {
+                                ...year,
+                                fixedCosts: year.fixedCosts * factor,
+                                grossProfit: year.grossRevenue - (year.fixedCosts * factor) - year.variableCosts,
+                                taxesProfit: Math.max(0, year.grossRevenue - (year.fixedCosts * factor) - year.variableCosts) * (parseFloat(document.getElementById('ir').value) + parseFloat(document.getElementById('csll').value)) / 100,
+                                netProfit: (year.grossRevenue - (year.fixedCosts * factor) - year.variableCosts) - Math.max(0, year.grossRevenue - (year.fixedCosts * factor) - year.variableCosts) * (parseFloat(document.getElementById('ir').value) + parseFloat(document.getElementById('csll').value)) / 100,
+                                cashFlow: (year.grossRevenue - (year.fixedCosts * factor) - year.variableCosts) - Math.max(0, year.grossRevenue - (year.fixedCosts * factor) - year.variableCosts) * (parseFloat(document.getElementById('ir').value) + parseFloat(document.getElementById('csll').value)) / 100
+                            };
+                        });
+                        break;
+                        
+                    case 'variable-costs':
+                        modifiedCashFlow = originalCashFlow.map(year => {
+                            if (year.year === 0) return year;
+                            const factor = 1 + (variation / 100);
+                            return {
+                                ...year,
+                                variableCosts: year.variableCosts * factor,
+                                grossProfit: year.grossRevenue - year.fixedCosts - (year.variableCosts * factor),
+                                taxesProfit: Math.max(0, year.grossRevenue - year.fixedCosts - (year.variableCosts * factor)) * (parseFloat(document.getElementById('ir').value) + parseFloat(document.getElementById('csll').value)) / 100,
+                                netProfit: (year.grossRevenue - year.fixedCosts - (year.variableCosts * factor)) - Math.max(0, year.grossRevenue - year.fixedCosts - (year.variableCosts * factor)) * (parseFloat(document.getElementById('ir').value) + parseFloat(document.getElementById('csll').value)) / 100,
+                                cashFlow: (year.grossRevenue - year.fixedCosts - (year.variableCosts * factor)) - Math.max(0, year.grossRevenue - year.fixedCosts - (year.variableCosts * factor)) * (parseFloat(document.getElementById('ir').value) + parseFloat(document.getElementById('csll').value)) / 100
+                            };
+                        });
+                        break;
+                        
+                    case 'initial-investment':
+                        modifiedCashFlow = originalCashFlow.map((year, index) => {
+                            if (index === 0) {
+                                return {
+                                    ...year,
+                                    cashFlow: year.cashFlow * (1 + (variation / 100)),
+                                    accumulatedCashFlow: year.accumulatedCashFlow * (1 + (variation / 100))
+                                };
+                            }
+                            return year;
+                        });
+                        break;
+                }
+                
+                // Recalcular VPL para o fluxo modificado
+                const modifiedVPL = calculateVPL(modifiedCashFlow, tma);
+                const originalVPL = calculateVPL(originalCashFlow, tma);
+                const vplChange = ((modifiedVPL - originalVPL) / originalVPL) * 100;
+                
+                sensitivityData.push({
+                    variation,
+                    variableValue: getVariableValue(variable, modifiedCashFlow, variation),
+                    vpl: modifiedVPL,
+                    vplChange
+                });
+            }
+            
+            // Atualizar tabela de sensibilidade
+            updateSensitivityTable(sensitivityData, variable);
+            
+            // Atualizar gráfico de sensibilidade
+            updateSensitivityChart(sensitivityData, variable);
+        }
+
+        function getVariableValue(variable, cashFlow, variation) {
+            switch (variable) {
+                case 'revenue':
+                    return cashFlow[1].grossRevenue; // Receita do primeiro ano
+                case 'fixed-costs':
+                    return cashFlow[1].fixedCosts; // Custos fixos do primeiro ano
+                case 'variable-costs':
+                    return cashFlow[1].variableCosts; // Custos variáveis do primeiro ano
+                case 'initial-investment':
+                    return -cashFlow[0].cashFlow; // Investimento inicial
+                default:
+                    return 0;
+            }
+        }
+
+        function updateSensitivityTable(data, variable) {
+            const tbody = document.querySelector('#sensitivity-table tbody');
+            tbody.innerHTML = '';
+            
+            const originalVPL = calculateVPL(cashFlow, parseFloat(document.getElementById('tma').value) || 10);
+            
+            data.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${formatNumber(item.variation)}%</td>
+                    <td>${formatMoney(item.variableValue)}</td>
+                    <td class="${item.vpl >= 0 ? 'positive' : 'negative'}">${formatMoney(item.vpl)}</td>
+                    <td class="${item.vplChange >= 0 ? 'positive' : 'negative'}">${formatNumber(item.vplChange)}%</td>
+                    <td>${item.vpl >= 0 ? '<span class="badge bg-success">Viável</span>' : '<span class="badge bg-danger">Inviável</span>'}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function updateSensitivityChart(data, variable) {
+            const ctx = document.getElementById('sensitivity-chart').getContext('2d');
+            
+            // Destruir gráfico anterior se existir
+            if (sensitivityChart) {
+                sensitivityChart.destroy();
+            }
+            
+            const labels = data.map(item => `${formatNumber(item.variation)}%`);
+            const vplData = data.map(item => item.vpl);
+            
+            // Determinar rótulo do eixo X baseado na variável selecionada
+            let xAxisLabel;
+            switch (variable) {
+                case 'revenue':
+                    xAxisLabel = 'Variação na Receita';
+                    break;
+                case 'fixed-costs':
+                    xAxisLabel = 'Variação nos Custos Fixos';
+                    break;
+                case 'variable-costs':
+                    xAxisLabel = 'Variação nos Custos Variáveis';
+                    break;
+                case 'initial-investment':
+                    xAxisLabel = 'Variação no Investimento Inicial';
+                    break;
+                default:
+                    xAxisLabel = 'Variação';
+            }
+            
+            sensitivityChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'VPL',
+                        data: vplData,
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: function(context) {
+                            const value = context.dataset.data[context.dataIndex];
+                            return value >= 0 ? 'rgba(75, 192, 192, 1)' : 'rgba(255, 99, 132, 1)';
+                        },
+                        pointBorderColor: 'rgba(255, 255, 255, 1)',
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Sensibilidade do VPL em relação a ' + xAxisLabel
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    label += formatMoney(context.raw);
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: xAxisLabel
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Valor Presente Líquido (VPL)'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return formatMoney(value);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Exportar para PDF
+        document.getElementById('export-pdf-summary').addEventListener('click', function() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Adicionar título
+            doc.setFontSize(18);
+            doc.text('Resumo do Projeto AgroCalc', 105, 15, { align: 'center' });
+            
+            // Adicionar informações básicas
+            doc.setFontSize(12);
+            doc.text(`Nome do Projeto: ${document.getElementById('project-name').value || 'Não informado'}`, 15, 25);
+            doc.text(`Tipo de Negócio: ${document.getElementById('business-type').options[document.getElementById('business-type').selectedIndex].text}`, 15, 30);
+            doc.text(`Duração: ${document.getElementById('project-duration').value} anos`, 15, 35);
+            doc.text(`Investimento Inicial: ${formatMoney(parseFloat(document.getElementById('initial-investment').value) || 0)}`, 15, 40);
+            
+            // Adicionar indicadores
+            doc.setFontSize(14);
+            doc.text('Indicadores Financeiros', 15, 50);
+            doc.setFontSize(12);
+            doc.text(`VPL: ${document.getElementById('vpl-result').textContent}`, 15, 55);
+            doc.text(`TIR: ${document.getElementById('tir-result').textContent}`, 15, 60);
+            doc.text(`Payback: ${document.getElementById('payback-result').textContent}`, 15, 65);
+            
+            // Adicionar data e rodapé
+            doc.setFontSize(10);
+            doc.text(`Relatório gerado em ${new Date().toLocaleDateString()}`, 15, 280);
+            doc.text('AgroCalc - Calculadora de Viabilidade Econômica', 105, 280, { align: 'center' });
+            
+            // Salvar PDF
+            doc.save(`Resumo_AgroCalc_${new Date().toISOString().slice(0,10)}.pdf`);
+        });
+
+        document.getElementById('export-pdf-full').addEventListener('click', function() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Adicionar título
+            doc.setFontSize(18);
+            doc.text('Relatório Completo AgroCalc', 105, 15, { align: 'center' });
+            
+            // Adicionar informações básicas
+            doc.setFontSize(12);
+            let y = 25;
+            doc.text(`Nome do Projeto: ${document.getElementById('project-name').value || 'Não informado'}`, 15, y);
+            y += 5;
+            doc.text(`Tipo de Negócio: ${document.getElementById('business-type').options[document.getElementById('business-type').selectedIndex].text}`, 15, y);
+            y += 5;
+            doc.text(`Duração: ${document.getElementById('project-duration').value} anos`, 15, y);
+            y += 5;
+            doc.text(`Investimento Inicial: ${formatMoney(parseFloat(document.getElementById('initial-investment').value) || 0)}`, 15, y);
+            y += 5;
+            doc.text(`Descrição: ${document.getElementById('project-description').value || 'Não informada'}`, 15, y);
+            y += 10;
+            
+            // Adicionar indicadores
+            doc.setFontSize(14);
+            doc.text('Indicadores Financeiros', 15, y);
+            y += 5;
+            doc.setFontSize(12);
+            doc.text(`VPL: ${document.getElementById('vpl-result').textContent}`, 15, y);
+            y += 5;
+            doc.text(`TIR: ${document.getElementById('tir-result').textContent}`, 15, y);
+            y += 5;
+            doc.text(`Payback: ${document.getElementById('payback-result').textContent}`, 15, y);
+            y += 5;
+            doc.text(`Payback Descontado: ${document.getElementById('payback-discounted-indicator').textContent}`, 15, y);
+            y += 10;
+            
+            // Adicionar resumo de custos e receitas
+            doc.setFontSize(14);
+            doc.text('Resumo Financeiro', 15, y);
+            y += 5;
+            doc.setFontSize(12);
+            doc.text(`Receita Total Anual: ${document.getElementById('total-revenue-yearly').textContent}`, 15, y);
+            y += 5;
+            doc.text(`Custos Fixos Anuais: ${document.getElementById('total-fixed-yearly').textContent}`, 15, y);
+            y += 5;
+            doc.text(`Custos Variáveis Anuais: ${document.getElementById('total-variable-yearly').textContent}`, 15, y);
+            y += 10;
+            
+            // Adicionar fluxo de caixa (simplificado)
+            doc.setFontSize(14);
+            doc.text('Fluxo de Caixa (últimos 5 anos)', 15, y);
+            y += 5;
+            
+            const cashFlowData = cashFlow.slice(-5);
+            cashFlowData.forEach(year => {
+                doc.setFontSize(10);
+                doc.text(`Ano ${year.year}: ${formatMoney(year.cashFlow)}`, 15, y);
+                y += 5;
+                if (y > 270) {
+                    doc.addPage();
+                    y = 15;
+                }
+            });
+            
+            // Adicionar data e rodapé
+            doc.setFontSize(10);
+            doc.text(`Relatório gerado em ${new Date().toLocaleDateString()}`, 15, 280);
+            doc.text('AgroCalc - Calculadora de Viabilidade Econômica', 105, 280, { align: 'center' });
+            
+            // Salvar PDF
+            doc.save(`Relatorio_Completo_AgroCalc_${new Date().toISOString().slice(0,10)}.pdf`);
+        });
+
+        document.getElementById('export-pdf-cashflow').addEventListener('click', function() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Adicionar título
+            doc.setFontSize(18);
+            doc.text('Fluxo de Caixa - AgroCalc', 105, 15, { align: 'center' });
+            
+            // Adicionar tabela de fluxo de caixa
+            doc.setFontSize(10);
+            let y = 25;
+            
+            // Cabeçalho da tabela
+            doc.text('Ano', 15, y);
+            doc.text('Receita Bruta', 30, y);
+            doc.text('Impostos', 60, y);
+            doc.text('Receita Líquida', 80, y);
+            doc.text('Custos Fixos', 110, y);
+            doc.text('Custos Variáveis', 140, y);
+            doc.text('Lucro Bruto', 170, y);
+            doc.text('IR/CSLL', 190, y);
+            doc.text('Lucro Líquido', 210, y);
+            y += 5;
+            
+            // Linhas da tabela
+            cashFlow.forEach(year => {
+                doc.text(year.year.toString(), 15, y);
+                doc.text(formatMoney(year.grossRevenue), 30, y);
+                doc.text(formatMoney(year.taxes), 60, y);
+                doc.text(formatMoney(year.netRevenue), 80, y);
+                doc.text(formatMoney(year.fixedCosts), 110, y);
+                doc.text(formatMoney(year.variableCosts), 140, y);
+                doc.text(formatMoney(year.grossProfit), 170, y);
+                doc.text(formatMoney(year.taxesProfit), 190, y);
+                doc.text(formatMoney(year.netProfit), 210, y);
+                y += 5;
+                
+                if (y > 270) {
+                    doc.addPage();
+                    y = 15;
+                }
+            });
+            
+            // Adicionar data e rodapé
+            doc.setFontSize(10);
+            doc.text(`Relatório gerado em ${new Date().toLocaleDateString()}`, 15, 280);
+            doc.text('AgroCalc - Calculadora de Viabilidade Econômica', 105, 280, { align: 'center' });
+            
+            // Salvar PDF
+            doc.save(`Fluxo_Caixa_AgroCalc_${new Date().toISOString().slice(0,10)}.pdf`);
+        });
+
+        // Exportar para Excel
+        document.getElementById('export-excel-summary').addEventListener('click', function() {
+            // Criar uma nova pasta de trabalho
+            const wb = XLSX.utils.book_new();
+            
+            // Criar planilha com dados resumidos
+            const summaryData = [
+                ['Resumo do Projeto AgroCalc'],
+                [''],
+                ['Informações Básicas'],
+                ['Nome do Projeto', document.getElementById('project-name').value || 'Não informado'],
+                ['Tipo de Negócio', document.getElementById('business-type').options[document.getElementById('business-type').selectedIndex].text],
+                ['Duração (anos)', document.getElementById('project-duration').value],
+                ['Investimento Inicial', parseFloat(document.getElementById('initial-investment').value) || 0],
+                [''],
+                ['Indicadores Financeiros'],
+                ['VPL', document.getElementById('vpl-result').textContent],
+                ['TIR', document.getElementById('tir-result').textContent],
+                ['Payback', document.getElementById('payback-result').textContent],
+                ['Payback Descontado', document.getElementById('payback-discounted-indicator').textContent],
+                [''],
+                ['Resumo Financeiro'],
+                ['Receita Total Anual', document.getElementById('total-revenue-yearly').textContent],
+                ['Custos Fixos Anuais', document.getElementById('total-fixed-yearly').textContent],
+                ['Custos Variáveis Anuais', document.getElementById('total-variable-yearly').textContent]
+            ];
+            
+            const ws = XLSX.utils.aoa_to_sheet(summaryData);
+            XLSX.utils.book_append_sheet(wb, ws, "Resumo");
+            
+            // Exportar arquivo
+            XLSX.writeFile(wb, `Resumo_AgroCalc_${new Date().toISOString().slice(0,10)}.xlsx`);
+        });
+
+        document.getElementById('export-excel-full').addEventListener('click', function() {
+            // Criar uma nova pasta de trabalho
+            const wb = XLSX.utils.book_new();
+            
+            // Planilha 1: Informações básicas
+            const basicInfoData = [
+                ['Informações Básicas do Projeto'],
+                ['Nome do Projeto', document.getElementById('project-name').value || 'Não informado'],
+                ['Tipo de Negócio', document.getElementById('business-type').options[document.getElementById('business-type').selectedIndex].text],
+                ['Duração (anos)', document.getElementById('project-duration').value],
+                ['Investimento Inicial', parseFloat(document.getElementById('initial-investment').value) || 0],
+                ['TMA (%)', document.getElementById('tma').value],
+                ['Taxa SELIC (%)', document.getElementById('selic').value],
+                ['Inflação Esperada (%)', document.getElementById('inflation').value],
+                ['Descrição', document.getElementById('project-description').value || 'Não informada']
+            ];
+            
+            const basicInfoWs = XLSX.utils.aoa_to_sheet(basicInfoData);
+            XLSX.utils.book_append_sheet(wb, basicInfoWs, "Informações");
+            
+            // Planilha 2: Custos Fixos
+            const fixedCostsData = [
+                ['Custos Fixos'],
+                ['Nome', 'Valor Mensal', 'Valor Anual', 'Tipo']
+            ];
+            
+            fixedCosts.forEach(cost => {
+                fixedCostsData.push([
+                    cost.name,
+                    cost.monthlyValue,
+                    cost.monthlyValue * 12,
+                    cost.type === 'capex' ? 'CAPEX' : 'OPEX'
+                ]);
+            });
+            
+            fixedCostsData.push([
+                'Total',
+                fixedCosts.reduce((sum, cost) => sum + cost.monthlyValue, 0),
+                fixedCosts.reduce((sum, cost) => sum + (cost.monthlyValue * 12), 0),
+                ''
+            ]);
+            
+            const fixedCostsWs = XLSX.utils.aoa_to_sheet(fixedCostsData);
+            XLSX.utils.book_append_sheet(wb, fixedCostsWs, "Custos Fixos");
+            
+            // Planilha 3: Custos Variáveis
+            const variableCostsData = [
+                ['Custos Variáveis'],
+                ['Nome', 'Valor Unitário', 'Quantidade Mensal', 'Valor Mensal', 'Valor Anual']
+            ];
+            
+            variableCosts.forEach(cost => {
+                variableCostsData.push([
+                    cost.name,
+                    cost.unitValue,
+                    cost.monthlyQuantity,
+                    cost.unitValue * cost.monthlyQuantity,
+                    cost.unitValue * cost.monthlyQuantity * 12
+                ]);
+            });
+            
+            variableCostsData.push([
+                'Total',
+                '',
+                variableCosts.reduce((sum, cost) => sum + cost.monthlyQuantity, 0),
+                variableCosts.reduce((sum, cost) => sum + (cost.unitValue * cost.monthlyQuantity), 0),
+                variableCosts.reduce((sum, cost) => sum + (cost.unitValue * cost.monthlyQuantity * 12), 0)
+            ]);
+            
+            const variableCostsWs = XLSX.utils.aoa_to_sheet(variableCostsData);
+            XLSX.utils.book_append_sheet(wb, variableCostsWs, "Custos Variáveis");
+            
+            // Planilha 4: Receitas
+            const revenuesData = [
+                ['Receitas'],
+                ['Nome', 'Preço Unitário', 'Quantidade Mensal', 'Receita Mensal', 'Receita Anual', 'Crescimento Anual (%)']
+            ];
+            
+            revenues.forEach(revenue => {
+                revenuesData.push([
+                    revenue.name,
+                    revenue.unitPrice,
+                    revenue.monthlyQuantity,
+                    revenue.unitPrice * revenue.monthlyQuantity,
+                    revenue.unitPrice * revenue.monthlyQuantity * 12,
+                    revenue.annualGrowth
+                ]);
+            });
+            
+            revenuesData.push([
+                'Total',
+                '',
+                revenues.reduce((sum, revenue) => sum + revenue.monthlyQuantity, 0),
+                revenues.reduce((sum, revenue) => sum + (revenue.unitPrice * revenue.monthlyQuantity), 0),
+                revenues.reduce((sum, revenue) => sum + (revenue.unitPrice * revenue.monthlyQuantity * 12), 0),
+                ''
+            ]);
+            
+            const revenuesWs = XLSX.utils.aoa_to_sheet(revenuesData);
+            XLSX.utils.book_append_sheet(wb, revenuesWs, "Receitas");
+            
+            // Planilha 5: Fluxo de Caixa
+            const cashFlowData = [
+                ['Fluxo de Caixa'],
+                ['Ano', 'Receita Bruta', 'Impostos', 'Receita Líquida', 'Custos Fixos', 'Custos Variáveis', 'Lucro Bruto', 'IR/CSLL', 'Lucro Líquido', 'Fluxo de Caixa', 'Fluxo Acumulado']
+            ];
+            
+            cashFlow.forEach(year => {
+                cashFlowData.push([
+                    year.year,
+                    year.grossRevenue,
+                    year.taxes,
+                    year.netRevenue,
+                    year.fixedCosts,
+                    year.variableCosts,
+                    year.grossProfit,
+                    year.taxesProfit,
+                    year.netProfit,
+                    year.cashFlow,
+                    year.accumulatedCashFlow
+                ]);
+            });
+            
+            const cashFlowWs = XLSX.utils.aoa_to_sheet(cashFlowData);
+            XLSX.utils.book_append_sheet(wb, cashFlowWs, "Fluxo de Caixa");
+            
+            // Exportar arquivo
+            XLSX.writeFile(wb, `Dados_Completos_AgroCalc_${new Date().toISOString().slice(0,10)}.xlsx`);
+        });
+
+        document.getElementById('export-excel-cashflow').addEventListener('click', function() {
+            // Criar uma nova pasta de trabalho
+            const wb = XLSX.utils.book_new();
+            
+            // Planilha: Fluxo de Caixa
+            const cashFlowData = [
+                ['Fluxo de Caixa'],
+                ['Ano', 'Receita Bruta', 'Impostos', 'Receita Líquida', 'Custos Fixos', 'Custos Variáveis', 'Lucro Bruto', 'IR/CSLL', 'Lucro Líquido', 'Fluxo de Caixa', 'Fluxo Acumulado']
+            ];
+            
+            cashFlow.forEach(year => {
+                cashFlowData.push([
+                    year.year,
+                    year.grossRevenue,
+                    year.taxes,
+                    year.netRevenue,
+                    year.fixedCosts,
+                    year.variableCosts,
+                    year.grossProfit,
+                    year.taxesProfit,
+                    year.netProfit,
+                    year.cashFlow,
+                    year.accumulatedCashFlow
+                ]);
+            });
+            
+            const ws = XLSX.utils.aoa_to_sheet(cashFlowData);
+            XLSX.utils.book_append_sheet(wb, ws, "Fluxo de Caixa");
+            
+            // Exportar arquivo
+            XLSX.writeFile(wb, `Fluxo_Caixa_AgroCalc_${new Date().toISOString().slice(0,10)}.xlsx`);
+        });
+
+        // Exportar para CSV
+        document.getElementById('export-csv').addEventListener('click', function() {
+            // Criar dados CSV
+            let csvContent = "data:text/csv;charset=utf-8,";
+            
+            // Adicionar cabeçalho
+            csvContent += "Ano,Receita Bruta,Impostos,Receita Líquida,Custos Fixos,Custos Variáveis,Lucro Bruto,IR/CSLL,Lucro Líquido,Fluxo de Caixa,Fluxo Acumulado\n";
+            
+            // Adicionar linhas
+            cashFlow.forEach(year => {
+                csvContent += `${year.year},${year.grossRevenue},${year.taxes},${year.netRevenue},${year.fixedCosts},${year.variableCosts},${year.grossProfit},${year.taxesProfit},${year.netProfit},${year.cashFlow},${year.accumulatedCashFlow}\n`;
+            });
+            
+            // Criar link de download
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Fluxo_Caixa_AgroCalc_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+
+        // Exportar para JSON
+        document.getElementById('export-json').addEventListener('click', function() {
+            const projectData = {
+                projectName: document.getElementById('project-name').value,
+                businessType: document.getElementById('business-type').value,
+                projectDuration: document.getElementById('project-duration').value,
+                initialInvestment: document.getElementById('initial-investment').value,
+                tma: document.getElementById('tma').value,
+                selic: document.getElementById('selic').value,
+                inflation: document.getElementById('inflation').value,
+                projectDescription: document.getElementById('project-description').value,
+                fixedCosts: fixedCosts,
+                variableCosts: variableCosts,
+                revenues: revenues,
+                cashFlow: cashFlow,
+                icms: document.getElementById('icms').value,
+                pis: document.getElementById('pis').value,
+                cofins: document.getElementById('cofins').value,
+                ir: document.getElementById('ir').value,
+                csll: document.getElementById('csll').value,
+                marketing: {
+                    productDescription: document.getElementById('product-description').value,
+                    targetAudience: document.getElementById('target-audience').value,
+                    differential: document.getElementById('differential').value,
+                    pricingStrategy: document.getElementById('pricing-strategy').value,
+                    channels: document.getElementById('channels').value,
+                    communication: document.getElementById('communication').value,
+                    emotionalAppeal: document.getElementById('emotional-appeal').value,
+                    cognitiveEase: document.getElementById('cognitive-ease').value,
+                    storytelling: document.getElementById('storytelling').value,
+                    sensoryElements: document.getElementById('sensory-elements').value,
+                    behavioralTriggers: document.getElementById('behavioral-triggers').value
+                },
+                indicators: {
+                    vpl: document.getElementById('vpl-result').textContent,
+                    tir: document.getElementById('tir-result').textContent,
+                    payback: document.getElementById('payback-result').textContent,
+                    paybackDiscounted: document.getElementById('payback-discounted-indicator').textContent
+                }
+            };
+            
+            // Criar link de download
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(projectData, null, 2));
+            const link = document.createElement("a");
+            link.setAttribute("href", dataStr);
+            link.setAttribute("download", `Dados_AgroCalc_${new Date().toISOString().slice(0,10)}.json`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+
+        // Gerar relatório completo
+        document.getElementById('generate-full-report').addEventListener('click', function() {
+            const reportContent = document.getElementById('full-report-content');
+            reportContent.innerHTML = `
+                <h4 class="text-center mb-4">Relatório Completo de Viabilidade Econômica</h4>
+                <div class="mb-4">
+                    <h5>1. Informações do Projeto</h5>
+                    <p><strong>Nome:</strong> ${document.getElementById('project-name').value || 'Não informado'}</p>
+                    <p><strong>Tipo de Negócio:</strong> ${document.getElementById('business-type').options[document.getElementById('business-type').selectedIndex].text}</p>
+                    <p><strong>Duração:</strong> ${document.getElementById('project-duration').value} anos</p>
+                    <p><strong>Investimento Inicial:</strong> ${formatMoney(parseFloat(document.getElementById('initial-investment').value) || 0)}</p>
+                    <p><strong>Descrição:</strong> ${document.getElementById('project-description').value || 'Não informada'}</p>
+                </div>
+                
+                <div class="mb-4">
+                    <h5>2. Análise Financeira</h5>
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead class="table-primary">
+                                <tr>
+                                    <th>Indicador</th>
+                                    <th>Valor</th>
+                                    <th>Viabilidade</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>VPL (Valor Presente Líquido)</td>
+                                    <td>${document.getElementById('vpl-indicator').textContent}</td>
+                                    <td>${document.getElementById('vpl-viability').innerHTML}</td>
+                                </tr>
+                                <tr>
+                                    <td>TIR (Taxa Interna de Retorno)</td>
+                                    <td>${document.getElementById('tir-indicator').textContent}</td>
+                                    <td>${document.getElementById('tir-viability').innerHTML}</td>
+                                </tr>
+                                <tr>
+                                    <td>Payback Simples</td>
+                                    <td>${document.getElementById('payback-indicator').textContent}</td>
+                                    <td>${document.getElementById('payback-viability').innerHTML}</td>
+                                </tr>
+                                <tr>
+                                    <td>Payback Descontado</td>
+                                    <td>${document.getElementById('payback-discounted-indicator').textContent}</td>
+                                    <td>${document.getElementById('payback-discounted-viability').innerHTML}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <h5>3. Fluxo de Caixa Anual</h5>
+                    ${document.querySelector('#cashflow-table').outerHTML}
+                </div>
+                
+                <div class="mb-4">
+                    <h5>4. Custos e Receitas</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Custos Fixos Anuais</h6>
+                            <p>Total: ${document.getElementById('total-fixed-yearly').textContent}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Custos Variáveis Anuais</h6>
+                            <p>Total: ${document.getElementById('total-variable-yearly').textContent}</p>
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-12">
+                            <h6>Receitas Anuais</h6>
+                            <p>Total: ${document.getElementById('total-revenue-yearly').textContent}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <h5>5. Plano de Marketing</h5>
+                    <p><strong>Público-Alvo:</strong> ${document.getElementById('target-audience').value || 'Não informado'}</p>
+                    <p><strong>Diferencial Competitivo:</strong> ${document.getElementById('differential').value || 'Não informado'}</p>
+                    <p><strong>Estratégia de Precificação:</strong> ${document.getElementById('pricing-strategy').value || 'Não informado'}</p>
+                    <p><strong>Canais de Distribuição:</strong> ${document.getElementById('channels').value || 'Não informado'}</p>
+                </div>
+                
+                <div class="mb-4">
+                    <h5>6. Conclusão</h5>
+                    <div class="alert ${document.getElementById('vpl-viability').querySelector('.badge').classList.contains('bg-success') ? 'alert-success' : 'alert-danger'}">
+                        Com base na análise realizada, o projeto é considerado 
+                        ${document.getElementById('vpl-viability').querySelector('.badge').classList.contains('bg-success') ? 'VIÁVEL' : 'INVIÁVEL'} 
+                        do ponto de vista econômico-financeiro.
+                    </div>
+                    <p>Recomendações e próximos passos:</p>
+                    <ul>
+                        <li>Validar as premissas de custos e receitas com dados de mercado</li>
+                        <li>Considerar a realização de um estudo de mercado mais detalhado</li>
+                        <li>Avaliar riscos não considerados nesta análise</li>
+                        <li>Desenvolver um plano de ação para implementação</li>
+                    </ul>
+                </div>
+                
+                <div class="text-muted small mt-4">
+                    <p>Relatório gerado em ${new Date().toLocaleDateString()} pelo AgroCalc - Calculadora de Viabilidade Econômica para Agronegócios</p>
+                </div>
+            `;
+        });
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            // Adicionar alguns dados de exemplo
+            if (fixedCosts.length === 0) {
+                fixedCosts = [
+                    { id: 1, name: "Aluguel", monthlyValue: 1500, type: "opex" },
+                    { id: 2, name: "Equipamentos", monthlyValue: 2000, type: "capex" }
+                ];
+                updateFixedCostsTable();
+            }
+            
+            if (variableCosts.length === 0) {
+                variableCosts = [
+                    { id: 1, name: "Ração", unitValue: 50, monthlyQuantity: 100 },
+                    { id: 2, name: "Mão de Obra", unitValue: 30, monthlyQuantity: 200 }
+                ];
+                updateVariableCostsTable();
+            }
+            
+            if (revenues.length === 0) {
+                revenues = [
+                    { id: 1, name: "Venda de Peixe", unitPrice: 80, monthlyQuantity: 150, annualGrowth: 5 }
+                ];
+                updateRevenueTable();
+            }
+        });
+    </script>
+</body>
+</html>
